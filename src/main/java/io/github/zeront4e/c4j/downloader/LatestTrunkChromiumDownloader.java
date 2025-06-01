@@ -1,0 +1,119 @@
+package io.github.zeront4e.c4j.downloader;
+
+import io.github.zeront4e.c4j.C4jOsArchitecture;
+import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
+import io.github.zeront4e.c4j.C4jOsDetectionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
+
+class LatestTrunkChromiumDownloader {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LatestTrunkChromiumDownloader.class);
+
+    public static final String WINDOWS_X86_ARCHITECTURE_PROPERTY = "chromium4j.download-url.latest-trunk.windows_x86";
+    public static final String WINDOWS_X64_ARCHITECTURE_PROPERTY = "chromium4j.download-url.latest-trunk.windows_x64";
+
+    public static final String LINUX_X86_ARCHITECTURE_PROPERTY = "chromium4j.download-url.latest-trunk.linux_x86";
+    public static final String LINUX_X64_ARCHITECTURE_PROPERTY = "chromium4j.download-url.latest-trunk.linux_x64";
+
+    public static final String DEFAULT_WINDOWS_X86_URL =
+            "https://download-chromium.appspot.com/dl/Win";
+
+    public static final String DEFAULT_WINDOWS_X64_URL =
+            "https://download-chromium.appspot.com/dl/Win_x64";
+
+    public static final String DEFAULT_LINUX_X86_URL =
+            "https://download-chromium.appspot.com/dl/Linux";
+
+    public static final String DEFAULT_LINUX_X64_URL =
+            "https://download-chromium.appspot.com/dl/Linux_x64";
+
+    private static final String ZIP_FILE_PREFIX = "chromium-trunk";
+    private static final String ZIP_FILE_SUFFIX = ".zip";
+
+    public static File downloadChromiumOrFail(C4jOsChromiumDistribution c4jOsChromiumDistribution,
+                                              boolean deleteDownloadedFile, Path downloadDirectoryPath,
+                                              C4jOsArchitecture c4jOsArchitecture,
+                                              Properties properties) throws Exception {
+        String obtainDownloadUrl = getDownloadUrl(c4jOsArchitecture, properties);
+
+        if (obtainDownloadUrl == null) {
+            String infoString = C4jOsDetectionUtil.getOsArchitectureInfo().getInfoString();
+
+            LOGGER.error("Unsupported OS: {}", infoString);
+
+            throw new Exception("The given OS \"" + infoString + "\" is unsupported.");
+        }
+
+        Path extractionDir = downloadDirectoryPath.resolve(c4jOsChromiumDistribution.getId());
+
+        Files.createDirectories(downloadDirectoryPath);
+        Files.createDirectories(extractionDir);
+
+        String zipFileName = ZIP_FILE_PREFIX + System.currentTimeMillis() + ZIP_FILE_SUFFIX;
+
+        Path zipFilePath = extractionDir.resolve(zipFileName);
+
+        downloadFileOrFail(obtainDownloadUrl, zipFilePath);
+
+        extractZipOrFail(zipFilePath, extractionDir);
+
+        LOGGER.info("Chromium downloaded and extracted successfully to: {}", extractionDir);
+
+        if(deleteDownloadedFile) {
+            LOGGER.info("Try to delete downloaded file.");
+
+            try {
+                Files.delete(zipFilePath);
+
+                LOGGER.info("The downloaded file was deleted.");
+            }
+            catch (Exception exception) {
+                LOGGER.warn("Unable to delete downloaded file.", exception);
+            }
+        }
+
+        return extractionDir.toFile();
+    }
+
+    private static String getDownloadUrl(C4jOsArchitecture osArchitecture, Properties properties) {
+        return switch (osArchitecture) {
+            case WINDOWS_X86 -> properties.getProperty(WINDOWS_X86_ARCHITECTURE_PROPERTY, DEFAULT_WINDOWS_X86_URL);
+            case WINDOWS_X64 -> properties.getProperty(WINDOWS_X64_ARCHITECTURE_PROPERTY, DEFAULT_WINDOWS_X64_URL);
+            case LINUX_X86 -> properties.getProperty(LINUX_X86_ARCHITECTURE_PROPERTY, DEFAULT_LINUX_X86_URL);
+            case LINUX_X64 -> properties.getProperty(LINUX_X64_ARCHITECTURE_PROPERTY, DEFAULT_LINUX_X64_URL);
+            default -> null;
+        };
+    }
+
+    private static void downloadFileOrFail(String fileUrl, Path destinationPath) throws Exception {
+        LOGGER.info("Try to download Chromium browser from URL: {}", fileUrl);
+
+        long time = System.currentTimeMillis();
+
+        FileDownloadUtil.downloadFileOrFail(fileUrl, destinationPath.toFile());
+
+        time = System.currentTimeMillis() - time;
+
+        LOGGER.info("Downloaded file in {}ms.", time);
+    }
+
+    private static void extractZipOrFail(Path zipFilePath, Path outputDirectoryPath) throws IOException {
+        LOGGER.info("Try to extract downloaded ZIP file \"{}\" to \"{}\".", zipFilePath.toString(),
+                outputDirectoryPath.toString());
+
+        long time = System.currentTimeMillis();
+
+        ZipUtil.unzip(zipFilePath.toFile(), outputDirectoryPath.toFile());
+
+        time = System.currentTimeMillis() - time;
+
+        LOGGER.info("Extracted ZIP file in {}ms.", time);
+    }
+}
+
