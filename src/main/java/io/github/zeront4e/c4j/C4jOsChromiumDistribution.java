@@ -2,7 +2,13 @@ package io.github.zeront4e.c4j;
 
 import java.util.Map;
 
+/**
+ * Enum to represent different Chromium distributions and their supported architectures.
+ */
 public enum C4jOsChromiumDistribution {
+    /**
+     * Official latest stable build of the Chromium web browser.
+     */
     LATEST_CHROMIUM_BUILD(
             "latest-trunk-build",
             "Official latest trunk build. Downloaded from \"https://download-chromium.appspot.com\".",
@@ -25,14 +31,26 @@ public enum C4jOsChromiumDistribution {
         this.architectureExecutableNameMap = architectureExecutableNameMap;
     }
 
+    /**
+     * Returns the ID of the Chromium distribution.
+     * @return The ID of the Chromium distribution.
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns the description of the Chromium distribution.
+     * @return The description of the Chromium distribution.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * Returns a map to get the executable name for a given architecture.
+     * @return The map that maps architectures to executable names.
+     */
     public Map<C4jOsArchitecture, String> getArchitectureExecutableNameMap() {
         return architectureExecutableNameMap;
     }

@@ -1,8 +1,5 @@
-package io.github.zeront4e.c4j.downloader;
+package io.github.zeront4e.c4j;
 
-import io.github.zeront4e.c4j.C4jOsArchitecture;
-import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
-import io.github.zeront4e.c4j.C4jOsDetectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +10,9 @@ import java.util.Properties;
 public class C4jChromiumDownloader {
     private static final Logger LOGGER = LoggerFactory.getLogger(C4jChromiumDownloader.class);
 
+    /**
+     * The default directory to download files into (located at the user home directory).
+     */
     public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = "chromium4j-downloads";
 
     /**

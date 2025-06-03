@@ -3,6 +3,12 @@ package io.github.zeront4e.c4j;
 import java.io.File;
 
 class FileSearchUtil {
+    /**
+     * Finds a file in a directory and its subdirectories.
+     * @param directoryFile The directory to search in.
+     * @param fileName The name of the file to find.
+     * @return The found file if found, null otherwise.
+     */
     public static File findFileOrNull(File directoryFile, String fileName) {
         if (!directoryFile.exists() || !directoryFile.isDirectory()) {
             System.out.println("Invalid directory path.");

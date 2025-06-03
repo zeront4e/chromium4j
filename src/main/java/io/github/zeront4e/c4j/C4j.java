@@ -1,6 +1,5 @@
 package io.github.zeront4e.c4j;
 
-import io.github.zeront4e.c4j.downloader.C4jChromiumDownloader;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,8 +7,31 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Files;
 
+/**
+ * Class to obtain and/or interact with Chromium based browser distributions. The goal is to download the latest
+ * available release of Chromium for the specified operating system. The downloaded distribution can be remotely
+ * controlled using Selenium.
+ */
 public class C4j {
     private static final Logger LOGGER = LoggerFactory.getLogger(C4j.class);
+
+    private static boolean testInstance = false;
+
+    /**
+     * Sets whether this instance is being used for testing purposes.
+     * @param testInstance True if this instance is being used for testing purposes.
+     */
+    static synchronized void setTestInstance(boolean testInstance) {
+        C4j.testInstance = testInstance;
+    }
+
+    /**
+     * Sets whether this instance is being used for testing purposes.
+     * @return True if this instance is being used for testing purposes.
+     */
+    static synchronized boolean isTestInstance() {
+        return testInstance;
+    }
 
     /**
      * Reports status updates (e.g. the state of the local setup and the overall progress).
@@ -87,8 +109,12 @@ public class C4j {
      * @param c4jChromeOptions The options to pass to the executable.
      * @return The remote instance.
      */
-    public static C4jRemoteChromium createInstance(File chromiumFile, C4jChromeOptions c4jChromeOptions) {
-        return new C4jRemoteChromium(chromiumFile, c4jChromeOptions.getChromeOptions());
+    public static C4jRemoteChromium createInstance(File chromiumFile, C4jChromeOptions c4jChromeOptions) throws Exception {
+        //Create a dummy remote instance for testing purposes.
+        if(testInstance)
+            return new C4jRemoteChromium();
+
+        return new C4jRemoteChromium(chromiumFile, c4jChromeOptions);
     }
 
     /**
@@ -116,24 +142,24 @@ public class C4j {
         return file != null && file.exists();
     }
 
-    private static File getDefaultInstallationChromiumFile(C4jOsChromiumDistribution c4jOsChromiumDistribution) {
+    static File getDefaultInstallationChromiumFile(C4jOsChromiumDistribution c4jOsChromiumDistribution) {
         return getDefaultInstallationChromiumFile(c4jOsChromiumDistribution, C4jOsDetectionUtil.detectOsArchitecture());
     }
 
-    private static File getDefaultInstallationChromiumFile(C4jOsChromiumDistribution c4jOsChromiumDistribution,
-                                                          C4jOsArchitecture c4jOsArchitecture) {
+    static File getDefaultInstallationChromiumFile(C4jOsChromiumDistribution c4jOsChromiumDistribution,
+                                                   C4jOsArchitecture c4jOsArchitecture) {
         File defaultDirectory = C4jChromiumDownloader
                 .getDefaultDistributionInstallationDirectory(c4jOsChromiumDistribution);
 
         if(!defaultDirectory.isDirectory())
             return null;
 
-        return ChromiumDetectionUtil.findChromiumExecutableOrNull(c4jOsChromiumDistribution, c4jOsArchitecture,
+        return findChromiumExecutableOrNull(c4jOsChromiumDistribution, c4jOsArchitecture,
                 defaultDirectory);
     }
 
-    private static File obtainDefaultChromiumOrFail(C4jOsChromiumDistribution c4jOsChromiumDistribution,
-                                                    StatusCallback statusCallback, boolean overwrite) throws Exception {
+    static File obtainDefaultChromiumOrFail(C4jOsChromiumDistribution c4jOsChromiumDistribution,
+                                            StatusCallback statusCallback, boolean overwrite) throws Exception {
         boolean performInstallation;
 
         if(overwrite) {
@@ -175,5 +201,18 @@ public class C4j {
         statusCallback.onStatusUpdate("The Chromium installation was found. Path: " + existingFile.getAbsolutePath());
 
         return existingFile;
+    }
+
+    static File findChromiumExecutableOrNull(C4jOsChromiumDistribution c4jOsChromiumDistribution,
+                                             C4jOsArchitecture c4jOsArchitecture, File directoryFile) {
+        if(c4jOsArchitecture == C4jOsArchitecture.UNSUPPORTED)
+            return null;
+
+        String executableName = c4jOsChromiumDistribution.getArchitectureExecutableNameMap().get(c4jOsArchitecture);
+
+        if(executableName == null)
+            return null;
+
+        return FileSearchUtil.findFileOrNull(directoryFile, executableName);
     }
 }

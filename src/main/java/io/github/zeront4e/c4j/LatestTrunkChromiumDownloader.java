@@ -1,8 +1,5 @@
-package io.github.zeront4e.c4j.downloader;
+package io.github.zeront4e.c4j;
 
-import io.github.zeront4e.c4j.C4jOsArchitecture;
-import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
-import io.github.zeront4e.c4j.C4jOsDetectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +33,17 @@ class LatestTrunkChromiumDownloader {
     private static final String ZIP_FILE_PREFIX = "chromium-trunk";
     private static final String ZIP_FILE_SUFFIX = ".zip";
 
+    /**
+     * Downloads and extracts the latest Chromium build for the given OS architecture and returns the final
+     * browser-directory.
+     * @param c4jOsChromiumDistribution The Chromium distribution.
+     * @param deleteDownloadedFile If true, the downloaded file will be deleted after extraction.
+     * @param downloadDirectoryPath The directory where the downloaded file will be saved.
+     * @param c4jOsArchitecture The OS architecture.
+     * @param properties The properties containing the download URLs (overwrites of the default URLs).
+     * @return The browser-directory.
+     * @throws Exception An unexpected exception.
+     */
     public static File downloadChromiumOrFail(C4jOsChromiumDistribution c4jOsChromiumDistribution,
                                               boolean deleteDownloadedFile, Path downloadDirectoryPath,
                                               C4jOsArchitecture c4jOsArchitecture,

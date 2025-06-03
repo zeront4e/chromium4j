@@ -1,10 +1,19 @@
-package io.github.zeront4e.c4j.downloader;
+package io.github.zeront4e.c4j;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+/**
+ * Utility class for working with ZIP files.
+ */
 class ZipUtil {
+    /**
+     * Extracts a ZIP file to the specified destination directory.
+     * @param zipFile The ZIP file to be extracted.
+     * @param destinationFile The destination directory where the ZIP file will be extracted.
+     * @throws IOException An unexpected exception.
+     */
     public static void unzip(File zipFile, File destinationFile) throws IOException {
         if (!destinationFile.exists())
             destinationFile.mkdirs();
