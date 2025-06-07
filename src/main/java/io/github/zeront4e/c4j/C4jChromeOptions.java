@@ -6,12 +6,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 /**
- * Class to configure the Chromium instance to launch. It contains (common) preset functions to create a preconfigured Chromium instance.
- * There is also a Builder class to create a fully customized Chromium instance.
+ * Class to configure the Chromium instance to launch. It contains (common) preset functions to create a preconfigured
+ * Chromium instance. There is also a Builder class to create a fully customized Chromium instance.
  */
 public class C4jChromeOptions {
     private static final Logger LOGGER = LoggerFactory.getLogger(C4jChromeOptions.class);
@@ -19,14 +18,14 @@ public class C4jChromeOptions {
     //Internal data.
 
     private final ChromeOptions chromeOptions;
-    private final Set<C4jCommonExtension> c4jCommonExtensions;
-    private final Properties customExtensionProperties;
+    private final Set<C4jExtension> c4JExtensions;
+    private final boolean reinstallExtensions;
 
-    private C4jChromeOptions(ChromeOptions chromeOptions, Set<C4jCommonExtension> c4jCommonExtensions,
-                             Properties customExtensionProperties) {
+    private C4jChromeOptions(ChromeOptions chromeOptions, Set<C4jExtension> c4JExtensions,
+                             boolean reinstallExtensions) {
         this.chromeOptions = chromeOptions;
-        this.c4jCommonExtensions = c4jCommonExtensions;
-        this.customExtensionProperties = customExtensionProperties;
+        this.c4JExtensions = c4JExtensions;
+        this.reinstallExtensions = reinstallExtensions;
     }
 
     /**
@@ -41,23 +40,23 @@ public class C4jChromeOptions {
      * Returns the set of registered common extensions.
      * @return The set of common extensions.
      */
-    public Set<C4jCommonExtension> getC4jCommonExtensions() {
-        return c4jCommonExtensions;
+    public Set<C4jExtension> getC4jCommonExtensions() {
+        return c4JExtensions;
     }
 
     /**
-     * Returns the custom extension properties.
-     * @return The custom extension properties.
+     * Returns true if all extensions should be reinstalled, even if already downloaded.
+     * @return True if extensions should be reinstalled.
      */
-    public Properties getCustomExtensionProperties() {
-        return customExtensionProperties;
+    public boolean isReinstallExtensions() {
+        return reinstallExtensions;
     }
 
     //Builder.
 
     public static class Builder {
-        private final Set<C4jCommonExtension> c4jCommonExtensions = new HashSet<>();
-        private Properties customExtensionProperties;
+        private final Set<C4jExtension> c4JExtensions = new HashSet<>();
+        private boolean reinstallExtensions = false;
 
         private final ChromeOptions chromeOptions;
 
@@ -145,26 +144,27 @@ public class C4jChromeOptions {
         }
 
         /**
-         * Registers common extensions to obtain and install, when the instance is launched.
-         * @param c4jCommonExtensions The common extensions to register.
+         * Registers common extensions to obtain and install, when the instance is launched. Only missing extensions
+         * will be downloaded. Existing extensions won't be updated.
+         * @param c4JExtensions The common extensions to register.
          * @return The builder instance.
          */
-        public Builder addCommonExtensions(Set<C4jCommonExtension> c4jCommonExtensions) {
-            return addCommonExtensions(c4jCommonExtensions, System.getProperties());
+        public Builder addCommonExtensions(Set<C4jExtension> c4JExtensions) {
+            return addCommonExtensions(c4JExtensions, false);
         }
 
         /**
          * Registers common extensions to obtain and install, when the instance is launched.
-         * @param c4jCommonExtensions The common extensions to register.
-         * @param customExtensionProperties The custom properties for the common extensions.
+         * @param c4JExtensions The common extensions to register.
+         * @param reinstallExtensions Whether to reinstall all extensions, even if they were already downloaded.
          * @return The builder instance.
          */
-        public Builder addCommonExtensions(Set<C4jCommonExtension> c4jCommonExtensions, Properties customExtensionProperties) {
-            c4jCommonExtensions.forEach(tmpCommonExtension ->
+        public Builder addCommonExtensions(Set<C4jExtension> c4JExtensions, boolean reinstallExtensions) {
+            c4JExtensions.forEach(tmpCommonExtension ->
                     LOGGER.info("Try to register common extension \"{}\".", tmpCommonExtension.getId()));
 
-            this.c4jCommonExtensions.addAll(c4jCommonExtensions);
-            this.customExtensionProperties = customExtensionProperties;
+            this.c4JExtensions.addAll(c4JExtensions);
+            this.reinstallExtensions = reinstallExtensions;
 
             return this;
         }
@@ -174,7 +174,7 @@ public class C4jChromeOptions {
          * @return The configured {@link C4jChromeOptions} instance.
          */
         public C4jChromeOptions build() {
-            return new C4jChromeOptions(chromeOptions, c4jCommonExtensions, customExtensionProperties);
+            return new C4jChromeOptions(chromeOptions, c4JExtensions, reinstallExtensions);
         }
     }
 
