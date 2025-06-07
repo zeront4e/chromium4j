@@ -1,8 +1,13 @@
 package io.github.zeront4e.c4j;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 
 class FileSearchUtil {
+    public static final Logger LOGGER = LoggerFactory.getLogger(FileSearchUtil.class);
+
     /**
      * Finds a file in a directory and its subdirectories.
      * @param directoryFile The directory to search in.
@@ -11,7 +16,7 @@ class FileSearchUtil {
      */
     public static File findFileOrNull(File directoryFile, String fileName) {
         if (!directoryFile.exists() || !directoryFile.isDirectory()) {
-            System.out.println("Invalid directory path.");
+            LOGGER.error("Return null. Invalid directory path: {}", directoryFile.getAbsolutePath());
 
             return null;
         }
@@ -19,19 +24,19 @@ class FileSearchUtil {
         File[] files = directoryFile.listFiles();
 
         if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
+            for (File tmpFile : files) {
+                if (tmpFile.isDirectory()) {
                     //Add Mac OS specific exception.
-                    if(file.getName().endsWith(".app") && file.getName().equals(fileName))
-                        return file;
+                    if(tmpFile.getName().endsWith(".app") && tmpFile.getName().equals(fileName))
+                        return tmpFile;
 
-                    File foundFile = findFileOrNull(file, fileName);
+                    File foundFile = findFileOrNull(tmpFile, fileName);
 
                     if (foundFile != null)
                         return foundFile;
                 }
-                else if (file.getName().equals(fileName)) {
-                    return file;
+                else if (tmpFile.getName().equals(fileName)) {
+                    return tmpFile;
                 }
             }
         }
