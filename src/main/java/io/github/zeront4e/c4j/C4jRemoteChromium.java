@@ -16,6 +16,7 @@ limitations under the License.
 package io.github.zeront4e.c4j;
 
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.devtools.DevTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +79,16 @@ public class C4jRemoteChromium {
                 LOGGER.warn("Unable to quit Chrome driver.", exception);
             }
         }));
+    }
+
+    /**
+     * Clears the browser data for the given URL path for a given handle (by using the dev-tools for a certain
+     * window/tab).
+     * @param urlPath The URL path to clear.
+     * @param devTools The DevTools instance for the window/tab.
+     */
+    public void clearBrowserDataForUrlPath(String urlPath, DevTools devTools) {
+        BrowserDataClearUtil.clearDataForUrlPath(chromeDriver, devTools, urlPath);
     }
 
     /**
