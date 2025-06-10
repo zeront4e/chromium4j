@@ -99,6 +99,16 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+
+        <configuration>
+          <!--suppress UnresolvedMavenProperty -->
+          <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <version>3.3.1</version>
 
@@ -150,6 +160,19 @@
                 <arg>${env.GPG_PASSPHRASE}</arg>
               </gpgArguments>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- We use this plugin to dynamically create properties (right now only used for the Mockito tests). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>properties</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
