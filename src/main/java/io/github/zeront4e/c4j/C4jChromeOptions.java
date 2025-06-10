@@ -4,7 +4,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -55,7 +55,7 @@ public class C4jChromeOptions {
     //Builder.
 
     public static class Builder {
-        private final Set<C4jExtension> c4JExtensions = new HashSet<>();
+        private Set<C4jExtension> c4JExtensions = Collections.emptySet();
         private boolean reinstallExtensions = false;
 
         private final ChromeOptions chromeOptions;
@@ -149,8 +149,8 @@ public class C4jChromeOptions {
          * @param c4JExtensions The common extensions to register.
          * @return The builder instance.
          */
-        public Builder addCommonExtensions(Set<C4jExtension> c4JExtensions) {
-            return addCommonExtensions(c4JExtensions, false);
+        public Builder addExtensions(Set<C4jExtension> c4JExtensions) {
+            return addExtensions(c4JExtensions, false);
         }
 
         /**
@@ -159,11 +159,11 @@ public class C4jChromeOptions {
          * @param reinstallExtensions Whether to reinstall all extensions, even if they were already downloaded.
          * @return The builder instance.
          */
-        public Builder addCommonExtensions(Set<C4jExtension> c4JExtensions, boolean reinstallExtensions) {
+        public Builder addExtensions(Set<C4jExtension> c4JExtensions, boolean reinstallExtensions) {
             c4JExtensions.forEach(tmpCommonExtension ->
                     LOGGER.info("Try to register common extension \"{}\".", tmpCommonExtension.getId()));
 
-            this.c4JExtensions.addAll(c4JExtensions);
+            this.c4JExtensions = c4JExtensions;
             this.reinstallExtensions = reinstallExtensions;
 
             return this;

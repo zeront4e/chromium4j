@@ -5,6 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.Set;
 
@@ -126,11 +129,45 @@ public class C4jRemoteChromium {
                 FileDownloadUtil.downloadFileOrFail(downloadUrl, extensionFile);
 
                 LOGGER.info("Downloaded extension.");
+
+                verifyHashOrFail(extensionFile, tmpExtension.getOptionalSha256Checksum());
             }
 
             LOGGER.info("Try to register extension. Path: {}", extensionFile.getAbsolutePath());
 
             c4jChromeOptions.getChromeOptions().addExtensions(extensionFile);
+        }
+    }
+
+    private static void verifyHashOrFail(File extensionFile, String expectedChecksum) throws Exception {
+        if(expectedChecksum != null && !expectedChecksum.isBlank()) {
+            LOGGER.info("Check the SHA-256 checksum of the downloaded extension.");
+
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+
+            //Update the digest by using an input stream.
+
+            try(FileInputStream fileInputStream = new FileInputStream(extensionFile)) {
+                byte[] buffer = new byte[8192];
+
+                int bytesRead;
+
+                while((bytesRead = fileInputStream.read(buffer, 0, buffer.length)) != -1) {
+                    messageDigest.update(buffer, 0, bytesRead);
+                }
+            }
+
+            byte[] digestBytes = messageDigest.digest();
+
+            String sha256Checksum = String.format("%0" + (digestBytes.length << 1) + "X",
+                    new BigInteger(1, digestBytes));
+
+            LOGGER.info("Expected hash: {} Actual hash: {}", expectedChecksum, sha256Checksum);
+
+            if(!sha256Checksum.equalsIgnoreCase(expectedChecksum))
+                throw new Exception("Invalid SHA-256 checksum for the downloaded extension.");
+
+            LOGGER.info("SHA-256 checksum is valid.");
         }
     }
 }
