@@ -32,10 +32,21 @@ import java.util.Set;
  * Class for managing a remote Chromium instance.
  */
 public class C4jRemoteChromium {
+    /**
+     * Represents a version of Chromium.
+     * @param guessedVersionId The guessed version ID (first part of the full version string).
+     * @param fullVersionString The full version string.
+     */
+    public record ChromiumVersion(String guessedVersionId, String fullVersionString) {
+
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(C4jRemoteChromium.class);
 
     private final boolean testInstance;
     private final ChromeDriver chromeDriver;
+
+    private final ChromiumVersionObtainer chromiumVersionObtainer;
 
     private final Set<C4jExtension> c4JExtensions;
 
@@ -45,6 +56,9 @@ public class C4jRemoteChromium {
     C4jRemoteChromium() {
         testInstance = true;
         chromeDriver = null;
+
+        chromiumVersionObtainer = null;
+
         c4JExtensions = Set.of();
     }
 
@@ -66,6 +80,8 @@ public class C4jRemoteChromium {
         c4jChromeOptions.getChromeOptions().setBinary(chromeBinaryFile);
 
         chromeDriver = new ChromeDriver(c4jChromeOptions.getChromeOptions());
+
+        chromiumVersionObtainer = new ChromiumVersionObtainer(chromeBinaryFile);
 
         c4JExtensions = Collections.unmodifiableSet(c4jChromeOptions.getC4jCommonExtensions());
 
@@ -105,6 +121,14 @@ public class C4jRemoteChromium {
      */
     public ChromeDriver getChromeDriver() {
         return chromeDriver;
+    }
+
+    /**
+     * Returns the version of Chromium that this instance uses or null, if no version could be extracted.
+     * @return The version of Chromium.
+     */
+    public ChromiumVersion getChromiumVersionOrNull() {
+        return chromiumVersionObtainer == null ? null : chromiumVersionObtainer.obtainChromiumVersionOrNull();
     }
 
     /**
