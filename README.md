@@ -190,10 +190,10 @@ public class Example {
 }
 ```
 
+### Receive status updates
+
 The following code prints status updates during the launch attempt. This is useful to display updates to the user, until
 the browser is finally launched.
-
-### Receive status updates
 
 ```java
 import io.github.zeront4e.c4j.C4j;
