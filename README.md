@@ -95,19 +95,21 @@ import io.github.zeront4e.c4j.C4jRemoteChromium;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
-public static void main(String[] args) {
-    //Configure your custom ChromeOptions.
+public class Example {
+    public static void main(String[] args) {
+        //Configure your custom ChromeOptions.
 
-    ChromeOptions chromeOptions = new ChromeOptions();
+        ChromeOptions chromeOptions = new ChromeOptions();
 
-    //Create a Chromium instance with custom options.
-    
-    C4jChromeOptions c4jChromeOptions = C4jChromeOptions.fromBuilder(chromeOptions).build();
-    
-    C4jRemoteChromium c4jRemoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
-            c4jChromeOptions);
+        //Create a Chromium instance with custom options.
 
-    //...
+        C4jChromeOptions c4jChromeOptions = C4jChromeOptions.fromBuilder(chromeOptions).build();
+
+        C4jRemoteChromium c4jRemoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
+                c4jChromeOptions);
+
+        //...
+    }
 }
 ```
 
@@ -123,16 +125,18 @@ import io.github.zeront4e.c4j.C4jChromeOptions;
 import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
 import io.github.zeront4e.c4j.C4jRemoteChromium;
 
-public static void main(String[] args) {
-    //Launch Chromium in app mode.
+public class Example {
+    public static void main(String[] args) {
+        //Launch Chromium in app mode.
 
-    C4jChromeOptions c4jChromeOptions = C4jChromeOptions.withAppOptions("https://www.example.com")
-            .build();
+        C4jChromeOptions c4jChromeOptions = C4jChromeOptions.withAppOptions("https://www.example.com")
+                .build();
 
-    C4jRemoteChromium c4jRemoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
-            c4jChromeOptions);
+        C4jRemoteChromium c4jRemoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
+                c4jChromeOptions);
 
-    //...
+        //...
+    }
 }
 ```
 
@@ -147,15 +151,17 @@ import io.github.zeront4e.c4j.C4jChromeOptions;
 import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
 import io.github.zeront4e.c4j.C4jRemoteChromium;
 
-public static void main(String[] args) {
-    //Launch Chromium in headless mode.
-    
-    C4jChromeOptions c4jChromeOptions = C4jChromeOptions.withHeadlessOptions().build();
-    
-    C4jRemoteChromium c4jRemoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD, 
-            c4jChromeOptions);
+public class Example {
+    public static void main(String[] args) {
+        //Launch Chromium in headless mode.
 
-    //...
+        C4jChromeOptions c4jChromeOptions = C4jChromeOptions.withHeadlessOptions().build();
+
+        C4jRemoteChromium c4jRemoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
+                c4jChromeOptions);
+
+        //...
+    }
 }
 ```
 
@@ -169,16 +175,18 @@ import io.github.zeront4e.c4j.C4jChromeOptions;
 import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
 import io.github.zeront4e.c4j.C4jRemoteChromium;
 
-public static void main(String[] args) {
-    //Force the download of the latest Chromium build.
+public class Example {
+    public static void main(String[] args) {
+        //Force the download of the latest Chromium build.
 
-    C4jRemoteChromium remoteChromium = C4j.createInstance(
-            C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
-            C4jChromeOptions.fromBuilder().build(),
-            true  //Overwrites an existing installation, if present.
-    );
+        C4jRemoteChromium remoteChromium = C4j.createInstance(
+                C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
+                C4jChromeOptions.fromBuilder().build(),
+                true  //Overwrites an existing installation, if present.
+        );
 
-    //...
+        //...
+    }
 }
 ```
 
@@ -193,17 +201,19 @@ import io.github.zeront4e.c4j.C4jChromeOptions;
 import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
 import io.github.zeront4e.c4j.C4jRemoteChromium;
 
-public static void main(String[] args) {
-    //Get status updates during the download and installation.
+public class Example {
+    public static void main(String[] args) {
+        //Get status updates during the download and installation.
 
-    C4jRemoteChromium remoteChromium = C4j.createInstance(
-            C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
-            C4jChromeOptions.fromBuilder().build(),
-            false, //Don't overwrite an existing installation.
-            status -> System.out.println("Status: " + status)
-    );
+        C4jRemoteChromium remoteChromium = C4j.createInstance(
+                C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD,
+                C4jChromeOptions.fromBuilder().build(),
+                false, //Don't overwrite an existing installation.
+                status -> System.out.println("Status: " + status)
+        );
 
-    //...
+        //...
+    }
 }
 ```
 
@@ -222,27 +232,59 @@ import io.github.zeront4e.c4j.C4jRemoteChromium;
 
 import java.util.Set;
 
-public static void main(String[] args) {
-    //Create Chrome options with a built-in extension reference.
+public class Example {
+    public static void main(String[] args) {
+        //Create Chrome options with a built-in extension reference.
 
-    C4jChromeOptions optionsWithUblock = C4jChromeOptions.fromBuilder().addExtensions(
-            Set.of(C4jExtension.U_BLOCK_ORIGIN_LITE_EXTENSION), 
-            false //Set to true to update/reinstall already downloaded extensions.
-    ).build();
+        C4jChromeOptions optionsWithUblock = C4jChromeOptions.fromBuilder().addExtensions(
+                Set.of(C4jExtension.U_BLOCK_ORIGIN_LITE_EXTENSION),
+                false //Set to true to update/reinstall already downloaded extensions.
+        ).build();
 
-    //Create Chrome options with a custom extension reference.
-    
-    C4jExtension darkReaderExtension = C4jExtension.createCustomExtension(
-            "dark-reader", //Extension ID
-            "Dark Reader", //Extension name
-            "Dark mode for every website", //Extension description
-            "https://your-site.com/your.crx", //Download URL
-            "4fc5e69b7b5fcc1c86b4e754a6e71f742d0fb6ffdab3ee725f7fbe722a1aa8b6" //Hash to verify the integrity (optional)
-    );
+        //Create Chrome options with a custom extension reference.
 
-    C4jChromeOptions optionsWithCustomExtension = C4jChromeOptions.fromBuilder().addExtensions(
-            Set.of(darkReaderExtension),
-            false
-    ).build();
+        C4jExtension darkReaderExtension = C4jExtension.createCustomExtension(
+                "dark-reader", //Extension ID
+                "Dark Reader", //Extension name
+                "Dark mode for every website", //Extension description
+                "https://your-site.com/your.crx", //Download URL
+                "4fc5e69b7b5fcc1c86b4e754a6e71f742d0fb6ffdab3ee725f7fbe722a1aa8b6" //Hash to verify the integrity (optional)
+        );
+
+        C4jChromeOptions optionsWithCustomExtension = C4jChromeOptions.fromBuilder().addExtensions(
+                Set.of(darkReaderExtension),
+                false
+        ).build();
+    }
+}
+```
+
+### Obtain the Chromium Version
+
+The following code demonstrates how to obtain the version information of your Chromium instance.
+
+```java
+import io.github.zeront4e.c4j.C4j;
+import io.github.zeront4e.c4j.C4jOsChromiumDistribution;
+import io.github.zeront4e.c4j.C4jRemoteChromium;
+import io.github.zeront4e.c4j.C4jRemoteChromium.ChromiumVersion;
+
+public class Example {
+    public static void main(String[] args) throws Exception {
+        //Create a Chromium instance.
+        
+        C4jRemoteChromium remoteChromium = C4j.createInstance(C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD);
+        
+        //Get the version information.
+        
+        ChromiumVersion chromiumVersion = remoteChromium.getChromiumVersion();
+        
+        //Display version information.
+        
+        System.out.println("Version ID (first version part): " + chromiumVersion.guessedVersionId());
+        System.out.println("Full Version: " + chromiumVersion.fullVersionString());
+        
+        //...
+    }
 }
 ```
