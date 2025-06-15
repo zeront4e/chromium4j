@@ -34,7 +34,7 @@ Add the following dependency to your Maven project:
 
 ```xml
 <dependency>
-    <groupId>io.github.zeront4e</groupId>
+    <groupId>io.github.zeront4e.c4j</groupId>
     <artifactId>chromium4j</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -43,7 +43,7 @@ Add the following dependency to your Maven project:
 Or for Gradle:
 
 ```groovy
-implementation 'io.github.zeront4e:chromium4j:1.0.0'
+implementation 'io.github.zeront4e.c4j:chromium4j:1.0.0'
 ```
 
 ## Usage examples 💻
