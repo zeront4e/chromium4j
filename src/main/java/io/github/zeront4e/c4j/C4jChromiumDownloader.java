@@ -28,7 +28,7 @@ public class C4jChromiumDownloader {
     /**
      * The default directory to download files into (located at the user home directory).
      */
-    public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = "chromium4j-downloads";
+    public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = ".chromium4j-downloads";
 
     /**
      * Returns the default distribution installation directory file.
@@ -47,13 +47,32 @@ public class C4jChromiumDownloader {
     public static File getDefaultInstallationDirectory() {
         String baseDirectoryPath = System.getProperty("user.home");
 
-        return new File(baseDirectoryPath + "/" + DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY);
+        File baseDirectoryFile = new File(baseDirectoryPath + "/" + DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY);
+
+        C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
+
+        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
+            try {
+                LOGGER.info("Windows was detected. Try to hide the default installation directory: {}",
+                        baseDirectoryPath);
+
+                baseDirectoryFile.mkdirs();
+
+                Files.setAttribute(baseDirectoryFile.toPath(), "dos:hidden", true,
+                        LinkOption.NOFOLLOW_LINKS);
+            }
+            catch (Exception exception) {
+                LOGGER.warn("Unable to hide the default installation directory.", exception);
+            }
+        }
+
+        return baseDirectoryFile;
     }
 
     /**
      * Downloads the latest Chromium distribution for the current OS architecture into the home-directory. The function
      * reads the system properties to apply possible URL overwrites. The downloaded files will be stored in the home
-     * directory of the user in the directory "chromium4j-downloads". The downloaded file will be deleted
+     * directory of the user in the directory ".chromium4j-downloads". The downloaded file will be deleted
      * after the extraction.
      * @param c4jOsChromiumDistribution The Chromium distribution to download.
      * @return The directory containing the extracted data.
@@ -66,7 +85,7 @@ public class C4jChromiumDownloader {
     /**
      * Downloads the latest Chromium distribution for the current OS architecture into the home-directory. The function
      * reads the system properties to apply possible URL overwrites. The downloaded files will be stored in the home
-     * directory of the user in the directory "chromium4j-downloads".
+     * directory of the user in the directory ".chromium4j-downloads".
      * @param c4jOsChromiumDistribution The Chromium distribution to download.
      * @param deleteDownloadedFile True, if the downloaded file should be deleted.
      * @return The directory containing the extracted data.
