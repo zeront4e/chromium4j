@@ -85,11 +85,22 @@ public class C4jChromeOptions {
          * @return The builder instance.
          */
         public Builder addOptionDisabledAutomationWarningOption() {
-            LOGGER.info("Try to disable automation warning. Set experimental option \"excludeSwitches\" to " +
-                    "\"enable-automation\" and \"useAutomationExtension\" to \"false\".");
+            C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
-            chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
-            chromeOptions.setExperimentalOption("useAutomationExtension", false);
+            if(c4jOsArchitecture != C4jOsArchitecture.WINDOWS_X86 &&
+                    c4jOsArchitecture != C4jOsArchitecture.WINDOWS_X64) {
+                LOGGER.warn("Chromium doesn't hide the test-related info-bar messages on non-Windows platforms. " +
+                        "Set the argument \"--disable-infobars\" to hide ALL info-bar messages.");
+
+                chromeOptions.addArguments("--disable-infobars");
+            }
+            else {
+                LOGGER.info("Try to disable automation warning. Set experimental option \"excludeSwitches\" to " +
+                        "\"enable-automation\" and \"useAutomationExtension\" to \"false\".");
+
+                chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+                chromeOptions.setExperimentalOption("useAutomationExtension", false);
+            }
 
             return this;
         }
