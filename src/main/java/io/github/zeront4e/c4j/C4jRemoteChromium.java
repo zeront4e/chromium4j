@@ -24,7 +24,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 
@@ -41,6 +43,8 @@ public class C4jRemoteChromium {
 
     }
 
+    private boolean chromiumInstanceActive = true;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(C4jRemoteChromium.class);
 
     private final boolean testInstance;
@@ -49,6 +53,8 @@ public class C4jRemoteChromium {
     private final ChromiumVersionObtainer chromiumVersionObtainer;
 
     private final Set<C4jExtension> c4JExtensions;
+
+    private final List<Runnable> browserExitListeners = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * Creates a new dummy remote Chromium instance for testing.
@@ -90,11 +96,25 @@ public class C4jRemoteChromium {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 chromeDriver.quit();
+
+                transformToInactiveState();
             }
             catch (Exception exception) {
                 LOGGER.warn("Unable to quit Chrome driver.", exception);
             }
         }));
+
+        //Start the internal monitoring to detect the browser exit.
+
+        monitorBrowserExit(chromeDriver);
+    }
+
+    /**
+     * Returns true if the Chromium instance is active and ready to interact with.
+     * @return True if the Chromium instance is (still) active, false otherwise.
+     */
+    public boolean isChromiumInstanceActive() {
+        return chromiumInstanceActive;
     }
 
     /**
@@ -137,6 +157,66 @@ public class C4jRemoteChromium {
      */
     public Set<C4jExtension> getC4jExtensions() {
         return c4JExtensions;
+    }
+
+    /**
+     * Adds a listener that will be called when the browser exits.
+     * @param listener The listener to be added.
+     * @return True if the listener was added, false otherwise.
+     */
+    public boolean addBrowserExitListener(Runnable listener) {
+        return browserExitListeners.add(listener);
+    }
+
+    /**
+     * Removes a listener that will be called when the browser exits.
+     * @param listener The listener to be removed.
+     * @return True if the listener was removed, false otherwise.
+     */
+    public boolean removeBrowserExitListener(Runnable listener) {
+        return browserExitListeners.remove(listener);
+    }
+
+    private void monitorBrowserExit(ChromeDriver chromeDriver) {
+        //Monitors Selenium if the browser exits.
+
+        Thread.startVirtualThread(() -> {
+            while (true) {
+                try {
+                    //Try to get the current URL. If it fails, it means the browser has exited.
+                    chromeDriver.getCurrentUrl();
+                }
+                catch (Exception exception) {
+                    LOGGER.info("Unable to contact the browser. Assume it was exited.", exception);
+
+                    break;
+                }
+
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (Exception exception) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            transformToInactiveState();
+        });
+    }
+
+    private synchronized void transformToInactiveState() {
+        chromiumInstanceActive = false;
+
+        for(Runnable runnable : browserExitListeners) {
+            try {
+                runnable.run();
+            }
+            catch (Exception callbackException) {
+                LOGGER.warn("Error calling browser exit listener.", callbackException);
+            }
+        }
+
+        browserExitListeners.clear();
     }
 
     private void obtainExtensionsOrFail(File chromeBinaryFile, C4jChromeOptions c4jChromeOptions) throws Exception {
@@ -189,7 +269,7 @@ public class C4jRemoteChromium {
         }
     }
 
-    private static void verifyHashOrFail(File extensionFile, String expectedChecksum) throws Exception {
+    private void verifyHashOrFail(File extensionFile, String expectedChecksum) throws Exception {
         if(expectedChecksum != null && !expectedChecksum.isBlank()) {
             LOGGER.info("Check the SHA-256 checksum of the downloaded extension.");
 
