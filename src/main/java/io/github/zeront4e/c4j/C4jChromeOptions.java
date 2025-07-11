@@ -34,31 +34,17 @@ public class C4jChromeOptions {
 
     //Internal data.
 
-    private final ChromeOptions chromeOptions;
-    private final Set<C4jExtension> c4JExtensions;
-    private final boolean reinstallExtensions;
+    private record InternalData(ChromeOptions chromeOptions, Set<C4jExtension> c4JExtensions,
+                                boolean reinstallExtensions, int customDriverWidth, int customDriverHeight,
+                                ChromeDriverService.Builder chromeDriverServiceBuilder,
+                                Map<String, String> environmentVariablesMap, boolean enableStealthMode) {
 
-    private final int customDriverWidth;
-    private final int customDriverHeight;
+    }
 
-    private final ChromeDriverService.Builder chromeDriverServiceBuilder;
+    private final InternalData internalData;
 
-    private final Map<String, String> environmentVariablesMap;
-
-    private C4jChromeOptions(ChromeOptions chromeOptions, Set<C4jExtension> c4JExtensions,
-                             boolean reinstallExtensions, int customDriverWidth, int customDriverHeight,
-                             ChromeDriverService.Builder chromeDriverServiceBuilder,
-                             Map<String, String> environmentVariablesMap) {
-        this.chromeOptions = chromeOptions;
-        this.c4JExtensions = c4JExtensions;
-        this.reinstallExtensions = reinstallExtensions;
-
-        this.customDriverWidth = customDriverWidth;
-        this.customDriverHeight = customDriverHeight;
-
-        this.chromeDriverServiceBuilder = chromeDriverServiceBuilder;
-
-        this.environmentVariablesMap = environmentVariablesMap;
+    private C4jChromeOptions(InternalData internalData) {
+        this.internalData = internalData;
     }
 
     /**
@@ -66,7 +52,7 @@ public class C4jChromeOptions {
      * @return The ChromeOptions instance.
      */
     public ChromeOptions getChromeOptions() {
-        return chromeOptions;
+        return internalData.chromeOptions();
     }
 
     /**
@@ -74,7 +60,7 @@ public class C4jChromeOptions {
      * @return The set of common extensions.
      */
     public Set<C4jExtension> getC4jCommonExtensions() {
-        return c4JExtensions;
+        return internalData.c4JExtensions();
     }
 
     /**
@@ -82,7 +68,7 @@ public class C4jChromeOptions {
      * @return True if extensions should be reinstalled.
      */
     public boolean isReinstallExtensions() {
-        return reinstallExtensions;
+        return internalData.reinstallExtensions();
     }
 
     /**
@@ -90,7 +76,7 @@ public class C4jChromeOptions {
      * @return The custom driver width.
      */
     public int getCustomDriverWidth() {
-        return customDriverWidth;
+        return internalData.customDriverWidth();
     }
 
     /**
@@ -98,7 +84,7 @@ public class C4jChromeOptions {
      * @return The custom driver height.
      */
     public int getCustomDriverHeight() {
-        return customDriverHeight;
+        return internalData.customDriverHeight();
     }
 
     /**
@@ -106,7 +92,7 @@ public class C4jChromeOptions {
      * @return The builder used to create this instance.
      */
     public ChromeDriverService.Builder getChromeDriverServiceBuilder() {
-        return chromeDriverServiceBuilder;
+        return internalData.chromeDriverServiceBuilder();
     }
 
     /**
@@ -114,23 +100,33 @@ public class C4jChromeOptions {
      * @return The environment variables map.
      */
     public Map<String, String> getEnvironmentVariablesMap() {
-        return environmentVariablesMap;
+        return internalData.environmentVariablesMap();
+    }
+
+    /**
+     * Returns true if the stealth mode is enabled.
+     * @return True if the stealth mode is enabled.
+     */
+    public boolean isEnableStealthMode() {
+        return internalData.enableStealthMode();
     }
 
     //Builder.
 
     public static class Builder {
+        private final ChromeOptions chromeOptions;
+
         private Set<C4jExtension> c4JExtensions = Collections.emptySet();
         private boolean reinstallExtensions = false;
 
-        private final ChromeOptions chromeOptions;
+        private int customDriverWidth = -1;
+        private int customDriverHeight = -1;
 
-        private int customDriverWidth;
-        private int customDriverHeight;
+        private ChromeDriverService.Builder chromeDriverServiceBuilder = null;
 
-        private ChromeDriverService.Builder chromeDriverServiceBuilder;
+        private Map<String, String> environmentVariablesMap = null;
 
-        private Map<String, String> environmentVariablesMap;
+        private boolean enableStealthMode = false;
 
         Builder(ChromeOptions chromeOptions) {
             this.chromeOptions = chromeOptions;
@@ -169,7 +165,7 @@ public class C4jChromeOptions {
          * @return The builder instance.
          */
         public Builder addDefaultUserAgent() {
-            return addUserAgent(DEFAULT_USER_AGENT);
+            return addOptionUserAgent(DEFAULT_USER_AGENT);
         }
 
         /**
@@ -177,7 +173,7 @@ public class C4jChromeOptions {
          * @param userAgent The custom user agent.
          * @return The builder instance.
          */
-        public Builder addUserAgent(String userAgent) {
+        public Builder addOptionUserAgent(String userAgent) {
             LOGGER.info("Set user agent to: {}", userAgent);
 
             chromeOptions.addArguments("--user-agent=" + userAgent);
@@ -280,6 +276,38 @@ public class C4jChromeOptions {
         }
 
         /**
+         * Tries to run the browser in stealth mode (not headless, but not visible to the user). This will also enable
+         * all options from {@link C4jChromeOptions.Builder#addOptionDisabledAutomationWarningOption}. Notice that the
+         * stealth-mode will launch the browser with an actual window. This window is minimized and hidden from the
+         * taskbar to achieve the same effect as a headless browser (from a user perspective). To achieve this JNA is
+         * used. On Windows the Win32 API is used to hide the browser. On Linux the X11 API is used to hide the browser.
+         * Please make sure that your Linux distribution has the X11 server installed. If you use Wayland make sure to
+         * install Xwayland or a similar alternative. Note that the browser option "--ozone-platform=x11" is set, to
+         * enable the X11 usage on Linux.
+         * @return The builder instance.
+         */
+        public Builder addOptionStealthMode() {
+            LOGGER.info("Set flag to launch the browser in stealth mode.");
+
+            enableStealthMode = true;
+
+            addOptionDisabledAutomationWarningOption();
+
+            C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
+
+            if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
+                LOGGER.info("Platform is set to {}. Add \"--ozenet-platform=x11\" option.", c4jOsArchitecture.name());
+
+                chromeOptions.addArguments("--ozone-platform=x11");
+            }
+            else {
+                LOGGER.info("Platform is set to {}. Skip \"--ozenet-platform=x11\" option.", c4jOsArchitecture.name());
+            }
+
+            return this;
+        }
+
+        /**
          * Registers common extensions to obtain and install, when the instance is launched. Only missing extensions
          * will be downloaded. Existing extensions won't be updated.
          * @param c4JExtensions The common extensions to register.
@@ -337,8 +365,19 @@ public class C4jChromeOptions {
          * @return The configured {@link C4jChromeOptions} instance.
          */
         public C4jChromeOptions build() {
-            return new C4jChromeOptions(chromeOptions, c4JExtensions, reinstallExtensions, customDriverWidth,
-                    customDriverHeight, chromeDriverServiceBuilder, environmentVariablesMap);
+            return new C4jChromeOptions(new InternalData(
+                    chromeOptions,
+                    c4JExtensions,
+                    reinstallExtensions,
+
+                    //Custom driver-window size.
+                    customDriverWidth,
+                    customDriverHeight,
+
+                    chromeDriverServiceBuilder,
+                    environmentVariablesMap,
+                    enableStealthMode
+            ));
         }
     }
 
@@ -384,16 +423,52 @@ public class C4jChromeOptions {
      * @return The preconfigured builder instance.
      */
     public static Builder withHeadlessOptions(boolean disableGpuRendering, int windowWidth, int windowHeight) {
-         Builder builder = fromBuilder(new ChromeOptions())
-                 .addOptionHeadless()
-                 .addOptionDisableDevShmUsage()
-                 .addOptionDisabledAutomationWarningOption()
-                 .addOptionWindowSize(windowWidth, windowHeight);
+        Builder builder = fromBuilder(new ChromeOptions())
+                .addOptionHeadless()
+                .addOptionDisableDevShmUsage()
+                .addOptionDisabledAutomationWarningOption()
+                .addOptionWindowSize(windowWidth, windowHeight);
 
-         if(disableGpuRendering)
+        if(disableGpuRendering)
             builder.addOptionDisableGpu();
 
-         return builder;
+        return builder;
+    }
+
+    //Stealth options.
+
+    /**
+     * Tries to run the browser in stealth mode (not headless, but not visible to the user). This will also enable
+     * all options from {@link C4jChromeOptions.Builder#addOptionDisabledAutomationWarningOption}. Notice that the
+     * stealth-mode will launch the browser with an actual window. This window is minimized and hidden from the
+     * taskbar to achieve the same effect as a headless browser (from a user perspective). To achieve this JNA is
+     * used. On Windows the Win32 API is used to hide the browser. On Linux the X11 API is used to hide the browser.
+     * Please make sure that your Linux distribution has the X11 server installed. If you use Wayland make sure to
+     * install Xwayland or a similar alternative. Note that the browser option "--ozone-platform=x11" is set, to
+     * enable the X11 usage on Linux.
+     * @return The builder instance.
+     */
+    public static Builder withStealthOptions() {
+        return fromBuilder(new ChromeOptions()).addOptionStealthMode();
+    }
+
+    /**
+     * Tries to run the browser in stealth mode (not headless, but not visible to the user). This will also enable
+     * all options from {@link C4jChromeOptions.Builder#addOptionDisabledAutomationWarningOption}. Notice that the
+     * stealth-mode will launch the browser with an actual window. This window is minimized and hidden from the
+     * taskbar to achieve the same effect as a headless browser (from a user perspective). To achieve this JNA is
+     * used. On Windows the Win32 API is used to hide the browser. On Linux the X11 API is used to hide the browser.
+     * Please make sure that your Linux distribution has the X11 server installed. If you use Wayland make sure to
+     * install Xwayland or a similar alternative. Note that the browser option "--ozone-platform=x11" is set, to
+     * enable the X11 usage on Linux.
+     * @param windowWidth The width of the window.
+     * @param windowHeight The height of the window.
+     * @return The builder instance.
+     */
+    public static Builder withStealthOptions(int windowWidth, int windowHeight) {
+        return fromBuilder(new ChromeOptions())
+                .addOptionStealthMode()
+                .addOptionWindowSize(windowWidth, windowHeight);
     }
 
     //Builder options.

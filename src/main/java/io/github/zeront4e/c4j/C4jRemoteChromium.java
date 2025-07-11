@@ -73,16 +73,17 @@ public class C4jRemoteChromium {
      * @param c4jChromeOptions The Chrome options.
      */
     C4jRemoteChromium(File chromeBinaryFile, C4jChromeOptions c4jChromeOptions) throws Exception {
+        testInstance = false;
+
         //Obtain all extensions that should be installed.
 
         obtainExtensionsOrFail(chromeBinaryFile, c4jChromeOptions);
 
-        //Configure the ChromeDriver.
+        //Configure/overwrite the Chromium binary.
 
-        testInstance = false;
-
-        //We always overwrite the binary file path in the Chrome options.
         c4jChromeOptions.getChromeOptions().setBinary(chromeBinaryFile);
+
+        //Check if we want to set a custom service-builder.
 
         ChromeDriverService.Builder builder;
 
@@ -97,23 +98,74 @@ public class C4jRemoteChromium {
             builder = new ChromeDriverService.Builder();
         }
 
+        //Check if we want to set custom env-variables.
+
         if(c4jChromeOptions.getEnvironmentVariablesMap() != null) {
             LOGGER.info("Set/overwrite builder environment variables.");
 
             builder.withEnvironment(c4jChromeOptions.getEnvironmentVariablesMap());
         }
 
+        //Check if we want to set a custom driver-window size.
+
         ChromeDriverService chromeDriverService = builder.build();
 
         chromeDriver = new ChromeDriver(chromeDriverService, c4jChromeOptions.getChromeOptions());
 
-        if(c4jChromeOptions.getCustomDriverWidth() > 0 && c4jChromeOptions.getCustomDriverHeight() > 0) {
+        if(c4jChromeOptions.getCustomDriverWidth() > -1 && c4jChromeOptions.getCustomDriverHeight() > -1) {
             LOGGER.info("Set custom driver size. Width: {}, Height: {}", c4jChromeOptions.getCustomDriverWidth(),
                     c4jChromeOptions.getCustomDriverHeight());
 
             chromeDriver.manage().window().setSize(new Dimension(c4jChromeOptions.getCustomDriverWidth(),
                     c4jChromeOptions.getCustomDriverHeight()));
         }
+
+        //Check if we want to run the browser in stealth-mode.
+
+        if(c4jChromeOptions.isEnableStealthMode()) {
+            LOGGER.info("Try to enable stealth mode.");
+
+            UuidWebServer uuidWebServer = null;
+
+            try {
+                uuidWebServer = new UuidWebServer();
+
+                uuidWebServer.start();
+
+                try {
+                    chromeDriver.manage().window().minimize();
+                }
+                catch (Exception exception) {
+                    LOGGER.warn("Unable to minimize initial window.", exception);
+                }
+
+                chromeDriver.get(uuidWebServer.getUrl());
+
+                WindowManagerWindow window = WindowManagerUtil.getWindowOrNull(uuidWebServer.getUuid());
+
+                if(window == null)
+                    throw new Exception("Unable to find window. Expected window UUID: " + uuidWebServer.getUuid());
+
+                WindowManagerUtil.minimizeWindow(window);
+                WindowManagerUtil.changeTaskbarVisibility(window, false);
+
+                LOGGER.info("Stealth mode was enabled. The window should be hidden.");
+            }
+            catch (Exception exception) {
+                LOGGER.error("Unable to enable stealth mode.", exception);
+            }
+            finally {
+                try {
+                    if(uuidWebServer != null)
+                        uuidWebServer.stop();
+                }
+                catch (Exception exception) {
+                    LOGGER.error("Unable to stop the UUID server.", exception);
+                }
+            }
+        }
+
+        //Set additional internal variables.
 
         chromiumVersionObtainer = new ChromiumVersionObtainer(chromeBinaryFile);
 
