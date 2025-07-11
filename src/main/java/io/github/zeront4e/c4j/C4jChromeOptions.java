@@ -15,13 +15,12 @@ limitations under the License.
 
 package io.github.zeront4e.c4j;
 
+import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Class to configure the Chromium instance to launch. It contains (common) preset functions to create a preconfigured
@@ -30,17 +29,36 @@ import java.util.Set;
 public class C4jChromeOptions {
     private static final Logger LOGGER = LoggerFactory.getLogger(C4jChromeOptions.class);
 
+    public static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3";
+
     //Internal data.
 
     private final ChromeOptions chromeOptions;
     private final Set<C4jExtension> c4JExtensions;
     private final boolean reinstallExtensions;
 
+    private final int customDriverWidth;
+    private final int customDriverHeight;
+
+    private final ChromeDriverService.Builder chromeDriverServiceBuilder;
+
+    private final Map<String, String> environmentVariablesMap;
+
     private C4jChromeOptions(ChromeOptions chromeOptions, Set<C4jExtension> c4JExtensions,
-                             boolean reinstallExtensions) {
+                             boolean reinstallExtensions, int customDriverWidth, int customDriverHeight,
+                             ChromeDriverService.Builder chromeDriverServiceBuilder,
+                             Map<String, String> environmentVariablesMap) {
         this.chromeOptions = chromeOptions;
         this.c4JExtensions = c4JExtensions;
         this.reinstallExtensions = reinstallExtensions;
+
+        this.customDriverWidth = customDriverWidth;
+        this.customDriverHeight = customDriverHeight;
+
+        this.chromeDriverServiceBuilder = chromeDriverServiceBuilder;
+
+        this.environmentVariablesMap = environmentVariablesMap;
     }
 
     /**
@@ -67,6 +85,38 @@ public class C4jChromeOptions {
         return reinstallExtensions;
     }
 
+    /**
+     * Returns the custom driver width.
+     * @return The custom driver width.
+     */
+    public int getCustomDriverWidth() {
+        return customDriverWidth;
+    }
+
+    /**
+     * Returns the custom driver height.
+     * @return The custom driver height.
+     */
+    public int getCustomDriverHeight() {
+        return customDriverHeight;
+    }
+
+    /**
+     * Returns the builder used to create this instance.
+     * @return The builder used to create this instance.
+     */
+    public ChromeDriverService.Builder getChromeDriverServiceBuilder() {
+        return chromeDriverServiceBuilder;
+    }
+
+    /**
+     * Returns the environment variables map.
+     * @return The environment variables map.
+     */
+    public Map<String, String> getEnvironmentVariablesMap() {
+        return environmentVariablesMap;
+    }
+
     //Builder.
 
     public static class Builder {
@@ -75,13 +125,20 @@ public class C4jChromeOptions {
 
         private final ChromeOptions chromeOptions;
 
+        private int customDriverWidth;
+        private int customDriverHeight;
+
+        private ChromeDriverService.Builder chromeDriverServiceBuilder;
+
+        private Map<String, String> environmentVariablesMap;
+
         Builder(ChromeOptions chromeOptions) {
             this.chromeOptions = chromeOptions;
         }
 
         /**
          * Adds experimental options to disable automation warning ("excludeSwitches" set to "enable-automation"
-         * and "useAutomationExtension" set to "false").
+         * and "useAutomationExtension" set to "false"). Also disables the blink feature "AutomationControlled".
          * @return The builder instance.
          */
         public Builder addOptionDisabledAutomationWarningOption() {
@@ -94,13 +151,36 @@ public class C4jChromeOptions {
 
                 chromeOptions.addArguments("--disable-infobars");
             }
-            else {
-                LOGGER.info("Try to disable automation warning. Set experimental option \"excludeSwitches\" to " +
-                        "\"enable-automation\" and \"useAutomationExtension\" to \"false\".");
 
-                chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
-                chromeOptions.setExperimentalOption("useAutomationExtension", false);
-            }
+            LOGGER.info("Try to disable automation detection. Set experimental option \"excludeSwitches\" to " +
+                    "\"enable-automation\" and \"useAutomationExtension\" to \"false\". Also disable blink feature " +
+                    "\"AutomationControlled\".");
+
+            chromeOptions.setExperimentalOption("excludeSwitches", List.of("enable-automation"));
+            chromeOptions.setExperimentalOption("useAutomationExtension", false);
+
+            chromeOptions.addArguments("--disable-blink-features=AutomationControlled");
+
+            return this;
+        }
+
+        /**
+         * Sets the default user agent.
+         * @return The builder instance.
+         */
+        public Builder addDefaultUserAgent() {
+            return addUserAgent(DEFAULT_USER_AGENT);
+        }
+
+        /**
+         * Sets the custom user agent.
+         * @param userAgent The custom user agent.
+         * @return The builder instance.
+         */
+        public Builder addUserAgent(String userAgent) {
+            LOGGER.info("Set user agent to: {}", userAgent);
+
+            chromeOptions.addArguments("--user-agent=" + userAgent);
 
             return this;
         }
@@ -149,9 +229,27 @@ public class C4jChromeOptions {
          * @return The builder instance.
          */
         public Builder addOptionWindowSize(int width, int height) {
+            return addOptionWindowSize(width, height, true);
+        }
+
+        /**
+         * Adds the "--window-size" option to set the initial window size.
+         * @param width The width of the window.
+         * @param height The height of the window.
+         * @param setCustomDriverSize Sets the given with and height also for the driver, if true.
+         * @return The builder instance.
+         */
+        public Builder addOptionWindowSize(int width, int height, boolean setCustomDriverSize) {
             LOGGER.info("Add \"--window-size\" option. Width: {} Height: {}", width, height);
 
-            chromeOptions.addArguments("--window-size=" + width + "x" + height);
+            chromeOptions.addArguments("--window-size=" + width + "," + height);
+
+            if(setCustomDriverSize) {
+                LOGGER.info("Set also custom driver window-size. Width: {} Height: {}", width, height);
+
+                customDriverWidth = width;
+                customDriverHeight = height;
+            }
 
             return this;
         }
@@ -165,6 +263,18 @@ public class C4jChromeOptions {
             LOGGER.info("Add \"--disable-dev-shm-usage\" option.");
 
             chromeOptions.addArguments("--disable-dev-shm-usage");
+
+            return this;
+        }
+
+        /**
+         * Adds the "--incognito" option to run Chrome in incognito mode.
+         * @return The builder instance.
+         */
+        public Builder addOptionIncognito() {
+            LOGGER.info("Add \"--incognito\" option.");
+
+            chromeOptions.addArguments("--incognito");
 
             return this;
         }
@@ -196,11 +306,39 @@ public class C4jChromeOptions {
         }
 
         /**
+         * Sets a custom Chrome driver service builder.
+         * @param chromeDriverServiceBuilder The Chrome driver service builder to set.
+         * @return The builder instance.
+         */
+        public Builder addCustomServiceBuilder(ChromeDriverService.Builder chromeDriverServiceBuilder) {
+            LOGGER.info("Set custom Chrome driver service builder.");
+
+            this.chromeDriverServiceBuilder = chromeDriverServiceBuilder;
+
+            return this;
+        }
+
+        /**
+         * Sets a custom environment variables map.
+         * @param environmentVariablesMap The custom environment variables map to set.
+         * @return The builder instance.
+         */
+        public Builder addEnvironmentVariablesMap(Map<String, String> environmentVariablesMap) {
+            LOGGER.info("Set custom environment variables map: {}",
+                    Arrays.toString(environmentVariablesMap.entrySet().toArray()));
+
+            this.environmentVariablesMap = environmentVariablesMap;
+
+            return this;
+        }
+
+        /**
          * Creates the {@link C4jChromeOptions} instance with the configured options.
          * @return The configured {@link C4jChromeOptions} instance.
          */
         public C4jChromeOptions build() {
-            return new C4jChromeOptions(chromeOptions, c4JExtensions, reinstallExtensions);
+            return new C4jChromeOptions(chromeOptions, c4JExtensions, reinstallExtensions, customDriverWidth,
+                    customDriverHeight, chromeDriverServiceBuilder, environmentVariablesMap);
         }
     }
 
@@ -247,10 +385,10 @@ public class C4jChromeOptions {
      */
     public static Builder withHeadlessOptions(boolean disableGpuRendering, int windowWidth, int windowHeight) {
          Builder builder = fromBuilder(new ChromeOptions())
-                .addOptionHeadless()
-                .addOptionDisableDevShmUsage();
-
-         builder.addOptionWindowSize(windowWidth, windowHeight);
+                 .addOptionHeadless()
+                 .addOptionDisableDevShmUsage()
+                 .addOptionDisabledAutomationWarningOption()
+                 .addOptionWindowSize(windowWidth, windowHeight);
 
          if(disableGpuRendering)
             builder.addOptionDisableGpu();

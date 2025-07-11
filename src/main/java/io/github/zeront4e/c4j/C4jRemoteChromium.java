@@ -15,7 +15,9 @@ limitations under the License.
 
 package io.github.zeront4e.c4j;
 
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.devtools.DevTools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -85,7 +84,36 @@ public class C4jRemoteChromium {
         //We always overwrite the binary file path in the Chrome options.
         c4jChromeOptions.getChromeOptions().setBinary(chromeBinaryFile);
 
-        chromeDriver = new ChromeDriver(c4jChromeOptions.getChromeOptions());
+        ChromeDriverService.Builder builder;
+
+        if(c4jChromeOptions.getChromeDriverServiceBuilder() != null) {
+            LOGGER.info("Use provided builder for ChromeDriverService.");
+
+            builder = c4jChromeOptions.getChromeDriverServiceBuilder();
+        }
+        else {
+            LOGGER.info("Use default builder for ChromeDriverService.");
+
+            builder = new ChromeDriverService.Builder();
+        }
+
+        if(c4jChromeOptions.getEnvironmentVariablesMap() != null) {
+            LOGGER.info("Set/overwrite builder environment variables.");
+
+            builder.withEnvironment(c4jChromeOptions.getEnvironmentVariablesMap());
+        }
+
+        ChromeDriverService chromeDriverService = builder.build();
+
+        chromeDriver = new ChromeDriver(chromeDriverService, c4jChromeOptions.getChromeOptions());
+
+        if(c4jChromeOptions.getCustomDriverWidth() > 0 && c4jChromeOptions.getCustomDriverHeight() > 0) {
+            LOGGER.info("Set custom driver size. Width: {}, Height: {}", c4jChromeOptions.getCustomDriverWidth(),
+                    c4jChromeOptions.getCustomDriverHeight());
+
+            chromeDriver.manage().window().setSize(new Dimension(c4jChromeOptions.getCustomDriverWidth(),
+                    c4jChromeOptions.getCustomDriverHeight()));
+        }
 
         chromiumVersionObtainer = new ChromiumVersionObtainer(chromeBinaryFile);
 
