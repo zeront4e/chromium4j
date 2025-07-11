@@ -13,16 +13,10 @@ class UuidWebServer extends NanoHTTPD {
 
     private final UUID uuid;
 
-    public UuidWebServer() throws IOException {
+    public UuidWebServer() {
         super(findFreePort());
 
         this.uuid = UUID.randomUUID();
-
-        //Create and start the server.
-
-        start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
-
-        LOGGER.info("Local server started on port \"{}\". Generated UUID: {}", getListeningPort(), uuid);
     }
 
     private static int findFreePort() {
@@ -38,8 +32,32 @@ class UuidWebServer extends NanoHTTPD {
         }
     }
 
-    public UUID getUuid() {
-        return uuid;
+    /**
+     * Returns a random UUID that is used to find the browser window.
+     * @return The random UUID.
+     */
+    public String getUuid() {
+        return uuid.toString();
+    }
+
+    /**
+     * Returns the URL to the server-site, including the random generated port.
+     * @return The URL to the server-site.
+     */
+    public String getUrl() {
+        return "http://localhost:" + getListeningPort();
+    }
+
+    @Override
+    public void start() throws IOException {
+        start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
+    }
+
+    @Override
+    public void start(int timeout, boolean daemon) throws IOException {
+        super.start(timeout, daemon);
+
+        LOGGER.info("Local server started on port \"{}\". Generated UUID: {}", getListeningPort(), uuid);
     }
 
     @Override
