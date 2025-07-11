@@ -42,11 +42,17 @@ class WindowManagerUtil {
     public static void changeTaskbarVisibility(WindowManagerWindow windowInfo, boolean setVisible) throws Exception {
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
-        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64)
+        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
             WindowManagerWindowsUtil.changeTaskbarVisibility(windowInfo, setVisible);
 
-        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64)
+            return;
+        }
+
+        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
             WindowManagerLinuxUtil.changeTaskbarVisibility(windowInfo, setVisible);
+
+            return;
+        }
 
         throw new Exception("Unsupported OS architecture.");
     }
@@ -59,11 +65,17 @@ class WindowManagerUtil {
     public static void minimizeWindow(WindowManagerWindow windowInfo) throws Exception {
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
-        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64)
+        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
             WindowManagerWindowsUtil.minimizeWindow(windowInfo);
 
-        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64)
+            return;
+        }
+
+        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
             WindowManagerLinuxUtil.minimizeWindow(windowInfo);
+
+            return;
+        }
 
         throw new Exception("Unsupported OS architecture.");
     }
