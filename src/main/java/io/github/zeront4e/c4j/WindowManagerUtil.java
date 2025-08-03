@@ -15,9 +15,14 @@ limitations under the License.
 
 package io.github.zeront4e.c4j;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 
 class WindowManagerUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WindowManagerUtil.class);
+
     /**
      * Returns the window instance or null.
      * @param partialWindowTitle The partial window title to match against.
@@ -25,10 +30,16 @@ class WindowManagerUtil {
      * @throws Exception An unexpected exception.
      */
     public static WindowManagerWindow getWindowOrNull(String partialWindowTitle) throws Exception {
-        return getWindows().stream()
+        LOGGER.debug("Searching for window with partial title: {}", partialWindowTitle);
+
+        WindowManagerWindow windowManagerWindow = getWindows().stream()
                 .filter(tmpWindow -> tmpWindow.title().contains(partialWindowTitle))
                 .findFirst()
                 .orElse(null);
+
+        LOGGER.debug("Found window: {}", windowManagerWindow != null ? windowManagerWindow.title() : "null");
+
+        return windowManagerWindow;
     }
 
     /**
@@ -39,11 +50,20 @@ class WindowManagerUtil {
     public static List<WindowManagerWindow> getWindows() throws Exception {
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
+        LOGGER.debug("Try to find available windows. Detected OS architecture: {}", c4jOsArchitecture);
+
+        List<WindowManagerWindow> windowList = null;
+
         if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64)
-            return WindowManagerWindowsUtil.getWindows();
+            windowList = WindowManagerWindowsUtil.getWindows();
 
         if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64)
-            return WindowManagerLinuxUtil.getWindows();
+            windowList = WindowManagerLinuxUtil.getWindows();
+
+        LOGGER.debug("Found windows: {}", windowList != null ? windowList.size() : 0);
+
+        if(windowList != null)
+            return windowList;
 
         throw new Exception("Unsupported OS architecture.");
     }
@@ -58,12 +78,16 @@ class WindowManagerUtil {
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
         if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
+            LOGGER.debug("Changing taskbar visibility for Windows OS. New target window state: {}", setVisible);
+
             WindowManagerWindowsUtil.changeTaskbarVisibility(windowInfo, setVisible);
 
             return;
         }
 
         if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
+            LOGGER.debug("Changing taskbar visibility for Linux OS. New target window state: {}", setVisible);
+
             WindowManagerLinuxUtil.changeTaskbarVisibility(windowInfo, setVisible);
 
             return;
@@ -79,6 +103,8 @@ class WindowManagerUtil {
      */
     public static void minimizeWindow(WindowManagerWindow windowInfo) throws Exception {
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
+
+        LOGGER.debug("Minimizing window. OS architecture: {} Window title: {}", c4jOsArchitecture, windowInfo.title());
 
         if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
             WindowManagerWindowsUtil.minimizeWindow(windowInfo);
