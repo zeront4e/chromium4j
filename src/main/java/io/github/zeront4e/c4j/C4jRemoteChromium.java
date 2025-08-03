@@ -55,6 +55,8 @@ public class C4jRemoteChromium {
 
     private final List<Runnable> browserExitListeners = Collections.synchronizedList(new ArrayList<>());
 
+    private WindowManagerWindow stealthChromiumWindow = null;
+
     /**
      * Creates a new dummy remote Chromium instance for testing.
      */
@@ -149,6 +151,8 @@ public class C4jRemoteChromium {
                 WindowManagerUtil.minimizeWindow(window);
                 WindowManagerUtil.changeTaskbarVisibility(window, false);
 
+                stealthChromiumWindow = window;
+
                 LOGGER.info("Stealth mode was enabled. The window should be hidden.");
             }
             catch (Exception exception) {
@@ -187,6 +191,23 @@ public class C4jRemoteChromium {
         //Start the internal monitoring to detect the browser exit.
 
         monitorBrowserExit(chromeDriver);
+    }
+
+    /**
+     * Toggles the taskbar visibility of the stealth Chromium window.
+     * @param showWindow The desired visibility state.
+     * @return True if the visibility was successfully toggled (the stealth mode is enabled), false otherwise (there is
+     * no window, because the stealth mode is disabled).
+     */
+    public boolean toggleStealthWindowTaskbarVisibility(boolean showWindow) throws Exception {
+        if(stealthChromiumWindow == null)
+            return false;
+
+        LOGGER.debug("Toggle stealth window taskbar visibility. New state: {}", showWindow);
+
+        WindowManagerUtil.changeTaskbarVisibility(stealthChromiumWindow, showWindow);
+
+        return true;
     }
 
     /**
