@@ -106,26 +106,13 @@ class WindowManagerLinuxUtil {
      * @return True if X11 is available, false otherwise.
      */
     public static boolean isX11Available() {
-        X11.Display display = null;
-
         try {
-            display = X11.INSTANCE.XOpenDisplay(null);
-
-            return display != null;
+            return getX11DataOrFail().x11Display() != null;
         }
-        catch (Throwable throwable) {
-            LOGGER.warn("Unable to open X11 display.", throwable);
+        catch (Exception exception) {
+            LOGGER.warn("Unable to open X11 display.", exception);
 
             return false;
-        }
-        finally {
-            try {
-                if (display != null)
-                    X11.INSTANCE.XCloseDisplay(display);
-            }
-            catch (Throwable throwable) {
-                //Ignore...
-            }
         }
     }
 
@@ -179,7 +166,9 @@ class WindowManagerLinuxUtil {
                 X11.XTextProperty name = new X11.XTextProperty();
 
                 x11.XGetWMName(display, window, name);
-                x11.XFree(name.getPointer());
+
+                if(name.getPointer() != null)
+                    x11.XFree(name.getPointer());
 
                 String windowTitle = name.value != null ? name.value : "null";
 
