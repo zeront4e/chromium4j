@@ -21,14 +21,22 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.file.*;
 import java.util.Properties;
+import java.util.Set;
 
 public class C4jChromiumDownloader {
+    private static final Set<String> COMMON_UNIX_BINARIES = Set.of(
+            "brave",
+            "chrome",
+            "chrome_crashpad_handler",
+            "chrome_sandbox"
+    );
+
     private static final Logger LOGGER = LoggerFactory.getLogger(C4jChromiumDownloader.class);
 
     /**
      * The default directory to download files into (located at the user home directory).
      */
-    public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = ".chromium4j-downloads";
+    public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY;
 
     /**
      * Returns the default distribution installation directory file.
@@ -45,16 +53,15 @@ public class C4jChromiumDownloader {
      * @return The default installation file.
      */
     public static File getDefaultInstallationDirectory() {
-        String baseDirectoryPath = System.getProperty("user.home");
-
-        File baseDirectoryFile = new File(baseDirectoryPath + "/" + DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY);
+        File baseDirectoryFile = new File(Constants.USER_HOME_DIRECTORY + "/" +
+                DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY);
 
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
         if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
             try {
                 LOGGER.info("Windows was detected. Try to hide the default installation directory: {}",
-                        baseDirectoryPath);
+                        baseDirectoryFile.getAbsolutePath());
 
                 baseDirectoryFile.mkdirs();
 
@@ -72,7 +79,7 @@ public class C4jChromiumDownloader {
     /**
      * Downloads the latest Chromium distribution for the current OS architecture into the home-directory. The function
      * reads the system properties to apply possible URL overwrites. The downloaded files will be stored in the home
-     * directory of the user in the directory ".chromium4j-downloads". The downloaded file will be deleted
+     * directory of the user in the directory ".chromium4j". The downloaded file will be deleted
      * after the extraction.
      * @param c4jOsChromiumDistribution The Chromium distribution to download.
      * @return The directory containing the extracted data.
@@ -85,7 +92,7 @@ public class C4jChromiumDownloader {
     /**
      * Downloads the latest Chromium distribution for the current OS architecture into the home-directory. The function
      * reads the system properties to apply possible URL overwrites. The downloaded files will be stored in the home
-     * directory of the user in the directory ".chromium4j-downloads".
+     * directory of the user in the directory ".chromium4j".
      * @param c4jOsChromiumDistribution The Chromium distribution to download.
      * @param deleteDownloadedFile True, if the downloaded file should be deleted.
      * @return The directory containing the extracted data.
@@ -108,7 +115,8 @@ public class C4jChromiumDownloader {
      * @throws Exception An unexpected exception.
      */
     public static File downloadChromiumOrFail(C4jOsChromiumDistribution c4jOsChromiumDistribution,
-                                              boolean deleteDownloadedFile, Path downloadDirectoryPath) throws Exception {
+                                              boolean deleteDownloadedFile,
+                                              Path downloadDirectoryPath) throws Exception {
         return downloadChromiumOrFail(c4jOsChromiumDistribution, deleteDownloadedFile, downloadDirectoryPath,
                 C4jOsDetectionUtil.detectOsArchitecture());
     }
@@ -149,13 +157,58 @@ public class C4jChromiumDownloader {
                 "Delete downloaded file: {}", c4jOsChromiumDistribution.name(), c4jOsArchitecture.name(),
                 downloadDirectoryPath.toAbsolutePath(), deleteDownloadedFile);
 
+        File downloadedDirectory = null;
+
         if(c4jOsChromiumDistribution == C4jOsChromiumDistribution.LATEST_CHROMIUM_BUILD) {
-            return LatestTrunkChromiumDownloader.downloadChromiumOrFail(c4jOsChromiumDistribution, deleteDownloadedFile,
-                    downloadDirectoryPath, c4jOsArchitecture, properties);
+            LOGGER.info("Try to obtain latest Chromium trunk build.");
+
+            downloadedDirectory = DownloaderLatestTrunkChromiumUtil.downloadChromiumOrFail(c4jOsChromiumDistribution,
+                    deleteDownloadedFile, downloadDirectoryPath, c4jOsArchitecture, properties);
+        }
+        else if(c4jOsChromiumDistribution == C4jOsChromiumDistribution.STABLE_BRAVE_RELEASE) {
+            LOGGER.info("Try to obtain latest stable Brave release.");
+
+            downloadedDirectory = DownloaderStableBrave.downloadChromiumOrFail(c4jOsChromiumDistribution,
+                    deleteDownloadedFile, downloadDirectoryPath, c4jOsArchitecture, properties);
+        }
+
+        if(downloadedDirectory != null) {
+            boolean isWindows = c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64 ||
+                    c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 ||
+                    c4jOsArchitecture == C4jOsArchitecture.WINDOWS_ARM64 ||
+                    c4jOsArchitecture == C4jOsArchitecture.WINDOWS_ARM32;
+
+            if(!isWindows)
+                patchUnixChromiumPermissions(downloadedDirectory);
+
+            return downloadedDirectory;
         }
 
         throw new Exception("Missing Chromium distribution implementation \"" + c4jOsChromiumDistribution.name() +
                 "\".");
+    }
+
+    private static void patchUnixChromiumPermissions(File downloadedDirectory) {
+        LOGGER.info("Try to patch Unix Chromium permissions, if applicable.");
+
+        for (String tmpCommonName : COMMON_UNIX_BINARIES) {
+            Path tmpFileCandidate = Path.of(downloadedDirectory.getAbsolutePath(), tmpCommonName);
+
+            boolean isRegularFile = Files.isRegularFile(tmpFileCandidate, LinkOption.NOFOLLOW_LINKS);
+
+            if (!isRegularFile)
+                continue;
+
+            try {
+                LOGGER.info("Try to make file executable. File: {}", tmpFileCandidate);
+
+                PosixFilePermissionUtil.setPermissionOrFail(tmpFileCandidate,
+                        PosixFilePermissionUtil.PermissionSet.OWNER_READ_WRITE);
+            }
+            catch (Exception exception) {
+                LOGGER.warn("Unable to make file executable.", exception);
+            }
+        }
     }
 }
 
