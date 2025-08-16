@@ -22,11 +22,15 @@ Currently supported platforms:
 - 🪟 Windows (x32 and x64)
 - 🐧 Linux (x32 and x64)
 
-Currently supported Chromium distributions:
-- Official Chromium builds from the build-trunk (see https://download-chromium.appspot.com)
+Currently supported Chromium distributions (can be easily obtained without manual steps):
+- Official Chromium builds from the official Chromium build-trunk
+  - Source: https://github.com/release-monitoring-project/chromium-release-tracker
+- Official stable Brave builds from the official Brave GitHub repo 
+  - Source: https://github.com/release-monitoring-project/brave-release-tracker
 
 Referenced Chromium extensions (can be easily obtained without manual steps):
-- uBlock Origin Lite (see https://chromewebstore.google.com/detail/ublock-origin-lite/ddkjiahejlhfcafbddmgiahcphecmpfh)
+- uBlock Origin Lite
+  - Source: "static/chromium-extensions/ublock-origin-lite"
 
 ## Installation 📦
 
@@ -287,4 +291,62 @@ public class Example {
         //...
     }
 }
+```
+
+## Custom properties 📝
+
+These custom Java-properties can be set, to overwrite certain defaults.
+
+### Java executable directory
+
+The following property can be used to set a custom Java executable directory (where the "java.exe" or "java" executable 
+is located). It is used to launch the Java-based CLI to hide remote-controlled Chromium windows, if the stealth mode is 
+enabled (see the stealth-mode documentation or the source code).
+
+Note that the property "java.home" is used by default, if no custom property is set.
+
+```
+chromium4j.java-executable-directory-path
+```
+
+### Chromium URLs to download trunk-builds
+
+These properties can be set to hint where to download the trunk-builds from.
+
+By default, this source is used, if no matching property is set:
+https://github.com/release-monitoring-project/chromium-release-tracker
+
+```
+chromium4j.download-url.latest-trunk.windows_x64
+chromium4j.download-url.latest-trunk.windows_x86
+
+chromium4j.download-url.latest-trunk.windows_arm64
+chromium4j.download-url.latest-trunk.windows_arm32
+
+chromium4j.download-url.latest-trunk.linux_x64
+chromium4j.download-url.latest-trunk.linux_x86
+
+chromium4j.download-url.latest-trunk.linux_arm64
+chromium4j.download-url.latest-trunk.linux_arm32
+```
+
+### Brave URLs to download stable releases
+
+These properties can be set to hint where to download the releases from.
+
+By default, this source is used, if no matching property is set:
+https://github.com/release-monitoring-project/brave-release-tracker
+
+```
+chromium4j.download-url.stable-brave.windows_x64
+chromium4j.download-url.stable-brave.windows_x86
+
+chromium4j.download-url.stable-brave.windows_arm64
+chromium4j.download-url.stable-brave.windows_arm32
+
+chromium4j.download-url.stable-brave.linux_x64
+chromium4j.download-url.stable-brave.linux_x86
+
+chromium4j.download-url.stable-brave.linux_arm64
+chromium4j.download-url.stable-brave.linux_arm32
 ```
