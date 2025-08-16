@@ -21,6 +21,10 @@ import java.util.Locale;
  * Utility class for detecting the operating system architecture.
  */
 public class C4jOsDetectionUtil {
+    private enum Architecture {
+        X86, X86_64, ARM32, ARM64, UNKNOWN
+    }
+
     /**
      * Record representing the detected operating system architecture.
      * @param osName The name of the operating system.
@@ -54,17 +58,47 @@ public class C4jOsDetectionUtil {
     public static C4jOsArchitecture detectOsArchitecture() {
         OsInfo osInfo = getOsArchitectureInfo();
 
-        boolean is64BitArchitecture = osInfo.osArchitecture().contains("64");
+        Architecture architecture = detectCpuArchitecture(osInfo);
+
+        boolean isArmArchitecture = architecture == Architecture.ARM32 || architecture == Architecture.ARM64;
+        boolean is64BitArchitecture = architecture == Architecture.ARM64 || architecture == Architecture.X86_64;
 
         String osName = osInfo.osName().toLowerCase(Locale.ENGLISH);
 
         if (osName.contains("win")) {
-            return is64BitArchitecture ? C4jOsArchitecture.WINDOWS_X64 : C4jOsArchitecture.WINDOWS_X86;
+            if(isArmArchitecture) {
+                return is64BitArchitecture ? C4jOsArchitecture.WINDOWS_ARM64 : C4jOsArchitecture.WINDOWS_ARM32;
+            }
+            else {
+                return is64BitArchitecture ? C4jOsArchitecture.WINDOWS_X64 : C4jOsArchitecture.WINDOWS_X86;
+            }
         }
         else if (osName.contains("nux") || osName.contains("nix") || osName.contains("bsd")) {
-            return is64BitArchitecture ? C4jOsArchitecture.LINUX_X64 : C4jOsArchitecture.LINUX_X86;
+            if(isArmArchitecture) {
+                return is64BitArchitecture ? C4jOsArchitecture.LINUX_ARM64 : C4jOsArchitecture.LINUX_ARM32;
+            }
+            else {
+                return is64BitArchitecture ? C4jOsArchitecture.LINUX_X64 : C4jOsArchitecture.LINUX_X86;
+            }
         }
 
         return C4jOsArchitecture.UNSUPPORTED;
     }
+
+    private static Architecture detectCpuArchitecture(OsInfo osInfo) {
+        String arch = osInfo.osArchitecture();
+
+        if (arch.contains("amd64") || arch.contains("x86_64")) {
+            return Architecture.X86_64;
+        } else if (arch.contains("x86") || arch.contains("i386")) {
+            return Architecture.X86;
+        } else if (arch.equals("arm") || arch.equals("arm32")) {
+            return Architecture.ARM32;
+        } else if (arch.equals("aarch64") || arch.equals("arm64")) {
+            return Architecture.ARM64;
+        } else {
+            return Architecture.UNKNOWN;
+        }
+    }
+
 }
