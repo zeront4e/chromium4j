@@ -280,10 +280,10 @@ public class C4jChromeOptions {
          * all options from {@link C4jChromeOptions.Builder#addOptionDisabledAutomationWarningOption}. Notice that the
          * stealth-mode will launch the browser with an actual window. This window is minimized and hidden from the
          * taskbar to achieve the same effect as a headless browser (from a user perspective). To achieve this JNA is
-         * used. On Windows the Win32 API is used to hide the browser. On Linux the X11 API is used to hide the browser.
-         * Please make sure that your Linux distribution has the X11 server installed. If you use Wayland make sure to
-         * install Xwayland or a similar alternative. Note that the browser option "--ozone-platform=x11" is set, to
-         * enable the X11 usage on Linux.
+         * used (using a Java-based CLI tool). On Windows the Win32 API is used to hide the browser. On Linux the X11
+         * API is used to hide the browser. Please make sure that your Linux distribution has the X11 server installed.
+         * If you use Wayland make sure to install Xwayland or a similar alternative. Note that the browser option
+         * "--ozone-platform=x11" is set, to enable the X11 usage on Linux.
          * @return The builder instance.
          */
         public Builder addOptionStealthMode() {
@@ -296,12 +296,12 @@ public class C4jChromeOptions {
             C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 
             if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
-                LOGGER.info("Platform is set to {}. Add \"--ozenet-platform=x11\" option.", c4jOsArchitecture.name());
+                LOGGER.info("Platform is set to {}. Add \"--ozone-platform=x11\" option.", c4jOsArchitecture.name());
 
                 chromeOptions.addArguments("--ozone-platform=x11");
             }
             else {
-                LOGGER.info("Platform is set to {}. Skip \"--ozenet-platform=x11\" option.", c4jOsArchitecture.name());
+                LOGGER.info("Platform is set to {}. Skip \"--ozone-platform=x11\" option.", c4jOsArchitecture.name());
             }
 
             return this;
@@ -390,7 +390,7 @@ public class C4jChromeOptions {
      * @return The preconfigured builder instance.
      */
     public static Builder withAppOptions(String appUrl) {
-        return fromBuilder(new ChromeOptions())
+        return fromBuilder()
                 .addOptionDisabledAutomationWarningOption()
                 .addOptionApp(appUrl);
     }
@@ -423,7 +423,7 @@ public class C4jChromeOptions {
      * @return The preconfigured builder instance.
      */
     public static Builder withHeadlessOptions(boolean disableGpuRendering, int windowWidth, int windowHeight) {
-        Builder builder = fromBuilder(new ChromeOptions())
+        Builder builder = fromBuilder()
                 .addOptionHeadless()
                 .addOptionDisableDevShmUsage()
                 .addOptionDisabledAutomationWarningOption()
@@ -449,7 +449,8 @@ public class C4jChromeOptions {
      * @return The builder instance.
      */
     public static Builder withStealthOptions() {
-        return fromBuilder(new ChromeOptions()).addOptionStealthMode();
+        return fromBuilder()
+                .addOptionStealthMode();
     }
 
     /**
@@ -466,7 +467,7 @@ public class C4jChromeOptions {
      * @return The builder instance.
      */
     public static Builder withStealthOptions(int windowWidth, int windowHeight) {
-        return fromBuilder(new ChromeOptions())
+        return fromBuilder()
                 .addOptionStealthMode()
                 .addOptionWindowSize(windowWidth, windowHeight);
     }
@@ -474,15 +475,21 @@ public class C4jChromeOptions {
     //Builder options.
 
     /**
-     * Creates a new builder with default ChromeOptions. You can customize the options using the builder methods.
+     * Creates a new builder with default ChromeOptions ("--no-first-run", "--no-default-browser-check").
+     * You can customize additional options using the builder methods.
      * @return A new {@link Builder} instance.
      */
     public static Builder fromBuilder() {
-        return new Builder(new ChromeOptions());
+        ChromeOptions chromeOptions = new ChromeOptions();
+
+        chromeOptions.addArguments("--no-first-run", "--no-default-browser-check");
+
+        return new Builder(chromeOptions);
     }
 
     /**
-     * Creates a new builder with the given ChromeOptions. You can customize the options using the builder methods.
+     * Creates a new builder with the given ChromeOptions. You can customize additional options using the builder
+     * methods.
      * @param chromeOptions The initial ChromeOptions.
      * @return A new {@link Builder} instance.
      */
