@@ -40,14 +40,14 @@ Add the following dependency to your Maven project:
 <dependency>
     <groupId>io.github.zeront4e.c4j</groupId>
     <artifactId>chromium4j</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
 Or for Gradle:
 
 ```groovy
-implementation 'io.github.zeront4e.c4j:chromium4j:1.0.0'
+implementation 'io.github.zeront4e.c4j:chromium4j:2.0.0'
 ```
 
 ## Usage examples 💻
