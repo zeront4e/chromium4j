@@ -22,7 +22,13 @@ package io.github.zeront4e.c4j;
 public enum C4jOsArchitecture {
     WINDOWS_X86,
     WINDOWS_X64,
+    WINDOWS_ARM32,
+    WINDOWS_ARM64,
+
     LINUX_X86,
     LINUX_X64,
+    LINUX_ARM32,
+    LINUX_ARM64,
+
     UNSUPPORTED
 }
