@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Files;
 
 /**
  * Class to obtain and/or interact with Chromium based browser distributions. The goal is to download the latest
@@ -184,7 +183,7 @@ public class C4j {
             statusCallback.onStatusUpdate("Overwrite is enabled. Try to delete existing Chromium installation. Path: " +
                     defaultDirectoryFile.getAbsolutePath());
 
-            boolean deletion = Files.deleteIfExists(defaultDirectoryFile.toPath());
+            boolean deletion = FilesDeletionUtil.deleteFileOrFail(defaultDirectoryFile);
 
             statusCallback.onStatusUpdate("Deletion attempt was completed. Deletion occurred: " + deletion);
 
@@ -223,11 +222,14 @@ public class C4j {
         if(c4jOsArchitecture == C4jOsArchitecture.UNSUPPORTED)
             return null;
 
+        File architectureDirectoryFile = new File(directoryFile.getAbsolutePath() + "/" +
+                c4jOsArchitecture.name());
+
         String executableName = c4jOsChromiumDistribution.getArchitectureExecutableNameMap().get(c4jOsArchitecture);
 
         if(executableName == null)
             return null;
 
-        return FileSearchUtil.findFileOrNull(directoryFile, executableName);
+        return FilesSearchUtil.findFileOrNull(architectureDirectoryFile, executableName);
     }
 }
