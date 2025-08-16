@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
-class FileSearchUtil {
-    public static final Logger LOGGER = LoggerFactory.getLogger(FileSearchUtil.class);
+class FilesSearchUtil {
+    public static final Logger LOGGER = LoggerFactory.getLogger(FilesSearchUtil.class);
 
     /**
      * Finds a file in a directory and its subdirectories.

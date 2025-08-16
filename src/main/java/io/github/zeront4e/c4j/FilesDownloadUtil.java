@@ -18,10 +18,7 @@ package io.github.zeront4e.c4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,12 +27,12 @@ import java.net.http.HttpResponse;
 /**
  * Utility class for downloading files using Java's HttpClient.
  */
-class FileDownloadUtil {
+class FilesDownloadUtil {
     public interface DownloadProgressCallback {
         void onDownloadProgress(long totalDownloadedBytes);
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileDownloadUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FilesDownloadUtil.class);
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.ALWAYS)
@@ -69,7 +66,40 @@ class FileDownloadUtil {
      * @param downloadProgressCallback Callback for tracking download progress.
      * @throws Exception An unexpected exception.
      */
-    public static void downloadFileOrFail(String fileUrl, File file, DownloadProgressCallback downloadProgressCallback) throws Exception {
+    public static void downloadFileOrFail(String fileUrl, File file,
+                                          DownloadProgressCallback downloadProgressCallback) throws Exception {
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+
+        downloadFileOrFail(file.getName(), fileUrl, fileOutputStream, downloadProgressCallback);
+    }
+
+    /**
+     * Downloads a file from a URL and returns the content.
+     * @param fileName The name of the file to download.
+     * @param fileUrl The URL to download the file from.
+     * @param downloadProgressCallback Callback for tracking download progress.
+     * @return The content of the downloaded file.
+     * @throws Exception An unexpected exception.
+     */
+    public static byte[] downloadFileOrFail(String fileName, String fileUrl,
+                                            DownloadProgressCallback downloadProgressCallback) throws Exception {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        downloadFileOrFail(fileName, fileUrl, byteArrayOutputStream, downloadProgressCallback);
+
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    /**
+      * Downloads a file from a URL to an output stream.
+      * @param fileName The name of the file to download.
+      * @param fileUrl The URL to download the file from.
+      * @param outputStream The output stream to which the file will be written.
+      * @param downloadProgressCallback Callback for tracking download progress.
+      * @throws Exception An unexpected exception.
+     */
+    public static void downloadFileOrFail(String fileName, String fileUrl, OutputStream outputStream,
+                                          DownloadProgressCallback downloadProgressCallback) throws Exception {
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(fileUrl))
@@ -79,18 +109,15 @@ class FileDownloadUtil {
                     HttpResponse.BodyHandlers.ofInputStream());
 
             if (httpResponse.statusCode() != 200) {
-                LOGGER.warn("Failed to download file \"{}\". HTTP status code: {}", file.getName(),
+                LOGGER.warn("Failed to download file \"{}\". HTTP status code: {}", fileName,
                         httpResponse.statusCode());
 
-                throw new Exception("Failed to download file \"" + file.getName() + "\". HTTP status code: " +
+                throw new Exception("Failed to download file \"" + fileName + "\". HTTP status code: " +
                         httpResponse.statusCode());
             }
 
             try (InputStream inputStream = httpResponse.body();
-                 FileOutputStream fileOutputStream = new FileOutputStream(file);
-
-                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream, BUFFER_SIZE)) {
-
+                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream, BUFFER_SIZE)) {
                 byte[] buffer = new byte[BUFFER_SIZE];
 
                 int bytesRead;
@@ -99,7 +126,7 @@ class FileDownloadUtil {
 
                 long nextLogThreshold = LOG_INTERVAL_MB;
 
-                LOGGER.info("Starting download: {}", file.getName());
+                LOGGER.info("Starting download: {}", fileName);
 
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     bufferedOutputStream.write(buffer, 0, bytesRead);
@@ -112,12 +139,12 @@ class FileDownloadUtil {
                     }
                 }
 
-                LOGGER.info("Download of \"{}\" completed. Total size: {} MiB", file.getName(),
-                        totalBytes / (1024 * 1024));
+                LOGGER.info("Download of \"{}\" completed. Total size: {} MiB ({} KiB)", fileName,
+                        totalBytes / (1024 * 1024), totalBytes / 1024);
             }
         }
         catch (Exception exception) {
-            LOGGER.error("Error downloading file \"{}\".", file.getName(), exception);
+            LOGGER.error("Error downloading file \"{}\".", fileName, exception);
 
             throw exception;
         }
