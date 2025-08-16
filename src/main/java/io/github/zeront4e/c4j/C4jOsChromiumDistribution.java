@@ -22,16 +22,40 @@ import java.util.Map;
  */
 public enum C4jOsChromiumDistribution {
     /**
-     * Official latest stable build of the Chromium web browser.
+     * Official latest build of the Chromium web browser.
      */
     LATEST_CHROMIUM_BUILD(
             "latest-trunk-build",
-            "Official latest trunk build. Downloaded from \"https://download-chromium.appspot.com\".",
+            "Official latest trunk build. Downloaded from " +
+                    "\"https://github.com/release-monitoring-project/chromium-release-tracker\".",
             Map.of(
-                C4jOsArchitecture.LINUX_X86, "chrome",
-                C4jOsArchitecture.LINUX_X64, "chrome",
-                C4jOsArchitecture.WINDOWS_X86, "chrome.exe",
-                C4jOsArchitecture.WINDOWS_X64, "chrome.exe"
+                    C4jOsArchitecture.LINUX_X86, "chrome",
+                    C4jOsArchitecture.LINUX_X64, "chrome",
+                    C4jOsArchitecture.LINUX_ARM32,  "chrome",
+                    C4jOsArchitecture.LINUX_ARM64,  "chrome",
+                    C4jOsArchitecture.WINDOWS_X86, "chrome.exe",
+                    C4jOsArchitecture.WINDOWS_X64, "chrome.exe",
+                    C4jOsArchitecture.WINDOWS_ARM32, "chrome.exe",
+                    C4jOsArchitecture.WINDOWS_ARM64, "chrome.exe"
+            )
+    ),
+
+    /**
+     * Official latest stable release of the Brave web browser.
+     */
+    STABLE_BRAVE_RELEASE(
+            "stable-brave-release",
+                    "Official latest stable Brave release. Downloaded from " +
+                            "\"https://github.com/release-monitoring-project/brave-release-tracker\".",
+            Map.of(
+                    C4jOsArchitecture.LINUX_X86, "brave",
+                    C4jOsArchitecture.LINUX_X64, "brave",
+                    C4jOsArchitecture.LINUX_ARM32,  "brave",
+                    C4jOsArchitecture.LINUX_ARM64,  "brave",
+                    C4jOsArchitecture.WINDOWS_X86, "brave.exe",
+                    C4jOsArchitecture.WINDOWS_X64, "brave.exe",
+                    C4jOsArchitecture.WINDOWS_ARM32, "brave.exe",
+                    C4jOsArchitecture.WINDOWS_ARM64, "brave.exe"
             )
     );
 
