@@ -15,109 +15,291 @@ limitations under the License.
 
 package io.github.zeront4e.c4j;
 
+ import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 class WindowManagerUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(WindowManagerUtil.class);
 
+    public static final String JAVA_EXECUTABLE_DIRECTORY_PATH_PROPERTY = "chromium4j.java-executable-directory-path";
+
+    private static final String CLI_VERSION_FILE_PATH = "/jna-window-manager-cli-version.txt";
+
+    private static final String CLI_RESOURCE_PATH = "/jna-window-manager-cli.jar";
+
+    private static final String DO_NOT_DELETE_README_RESOURCE_PATH = "/DO-NOT-DELETE-README.txt";
+
+    private static Path extractWindowManagerCli() throws Exception {
+        String pomVersion = PomVersionExtractionUtil.getPomVersion();
+
+        Path versionFilePath = Path.of(Constants.USER_HOME_DIRECTORY + "/" +
+                Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY + CLI_VERSION_FILE_PATH);
+
+        boolean overwriteFile;
+
+        if(Files.exists(versionFilePath)) {
+            String versionString = Files.readString(versionFilePath, StandardCharsets.UTF_8);
+
+            try {
+                overwriteFile = VersionComparisonUtil.isNewerVersion(versionString, pomVersion);
+            }
+            catch (Exception exception) {
+                LOGGER.warn("Unable to compare existing version with current library version.", exception);
+
+                overwriteFile = true;
+            }
+        }
+        else {
+            overwriteFile = true;
+        }
+
+        Path targetFilePath = Path.of(Constants.USER_HOME_DIRECTORY + "/" +
+                Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY + CLI_RESOURCE_PATH);
+
+        if(!overwriteFile && Files.exists(targetFilePath)) {
+            LOGGER.info("Window manager CLI already exists. Path: {}", targetFilePath);
+        }
+        else {
+            LOGGER.info("Try to (re)extract window manager CLI. Path: {}", targetFilePath);
+
+            //Write version file.
+
+            Files.writeString(versionFilePath, pomVersion, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+            //Write CLI file.
+
+            ResourcesUtil.extractFile(CLI_RESOURCE_PATH, targetFilePath);
+
+            //Write readme file.
+
+            Path readmeFilePath = Path.of(Constants.USER_HOME_DIRECTORY + "/" +
+                    Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY + DO_NOT_DELETE_README_RESOURCE_PATH);
+
+            ResourcesUtil.extractFile(DO_NOT_DELETE_README_RESOURCE_PATH, readmeFilePath);
+
+            LOGGER.info("Extracted window manager CLI.");
+        }
+
+        return targetFilePath;
+    }
+
+    private static Path getJavaExecutablePathOrNull(Path javaDirectoryPath) {
+        if(Files.isDirectory(javaDirectoryPath)) {
+            Path javaExecutablePath = javaDirectoryPath.resolve("java.exe");
+
+            if(Files.exists(javaExecutablePath)) {
+                LOGGER.info("Windows Java executable is available. Path: {}", javaExecutablePath);
+
+                return javaExecutablePath;
+            }
+
+            javaExecutablePath = javaDirectoryPath.resolve("java");
+
+            if(Files.exists(javaExecutablePath)) {
+                LOGGER.info("Unix-like Java executable is available. Path: {}", javaExecutablePath);
+
+                return javaExecutablePath;
+            }
+
+            LOGGER.info("Custom Java directory is set. Path: {}", javaDirectoryPath);
+
+            return javaDirectoryPath;
+        }
+
+        LOGGER.info("Java directory was not found.");
+
+        return null;
+    }
+
+    private static String runCliCommandOrNull(List<String> args) throws Exception {
+        LOGGER.info("Try to run CLI. Args: {}", Arrays.toString(args.toArray()));
+
+        //Construct paths.
+
+        Path jarCliExecutablePath = extractWindowManagerCli();
+
+        String javaHome = System.getProperty("java.home", "");
+
+        String configuredJavaPath = System.getProperty(JAVA_EXECUTABLE_DIRECTORY_PATH_PROPERTY, javaHome.isBlank() ?
+                "" : javaHome + "/bin");
+
+        Path javaDirectoryPath = Path.of(configuredJavaPath);
+
+        Path javaExecutablePath = getJavaExecutablePathOrNull(javaDirectoryPath);
+
+        if(javaExecutablePath == null)
+            throw new Exception("Java executable is not available.");
+
+        //Construct arguments.
+
+        List<String> finalArguments = new ArrayList<>();
+
+        finalArguments.add(javaExecutablePath.toAbsolutePath().toString());
+        finalArguments.add("--enable-native-access=ALL-UNNAMED");
+        finalArguments.add("-jar");
+        finalArguments.add(jarCliExecutablePath.toAbsolutePath().toString());
+
+        finalArguments.addAll(args);
+
+        //Create process builder.
+
+        ProcessBuilder processBuilder = new ProcessBuilder(finalArguments.toArray(new String[0]));
+        processBuilder.redirectErrorStream(true);
+
+        //Start process.
+
+        Process process = processBuilder.start();
+
+        String output = null;
+
+        try {
+            byte[] readBytes = process.getInputStream().readAllBytes();
+
+            int exitCode = process.waitFor();
+
+            if(exitCode == 0) {
+                output = new String(readBytes, StandardCharsets.UTF_8);
+            }
+            else {
+                String error = new String(readBytes, StandardCharsets.UTF_8);
+
+                LOGGER.error("Failed to run CLI. Exit code: {} Error: {}", exitCode, error);
+            }
+        }
+        catch (Exception exception) {
+            LOGGER.error("Failed to run CLI.", exception);
+        }
+
+        return output;
+    }
+
+    private static List<WindowManagerWindow> extractWindows(String response) throws Exception {
+        String[] lines = response.split("\n");
+
+        if(lines.length > 1) {
+            for(int tmpIndex = 0; tmpIndex < lines.length - 1; tmpIndex++) {
+                String tmpLine = lines[tmpIndex];
+
+                if(!tmpLine.isBlank())
+                    LOGGER.info("CLI: {}", tmpLine);
+            }
+        }
+
+        String payloadCandidate = lines[lines.length - 1];
+
+        JsonElement jsonElement = JsonParser.parseString(payloadCandidate);
+
+        if(!jsonElement.isJsonArray())
+            throw new Exception("Response is not a JSON array.");
+
+        JsonArray jsonArray = jsonElement.getAsJsonArray();
+
+        List<WindowManagerWindow> windows = new ArrayList<>();
+
+        for(int i = 0; i < jsonArray.size(); i++) {
+            JsonElement tmpArrayJsonElement = jsonArray.get(i);
+
+            if (!tmpArrayJsonElement.isJsonObject())
+                throw new Exception("Response is not a JSON object.");
+
+            JsonObject jsonObject = tmpArrayJsonElement.getAsJsonObject();
+
+            WindowManagerWindow windowManagerWindow = new WindowManagerWindow(jsonObject.get("id").getAsLong(),
+                    jsonObject.get("title").getAsString());
+
+            windows.add(windowManagerWindow);
+        }
+
+        LOGGER.debug("Extracted {} windows.", windows.size());
+
+        return windows;
+    }
+
     /**
-     * Returns the window instance or null.
+     * Returns the matching window instances.
      * @param partialWindowTitle The partial window title to match against.
-     * @return The found window instance.
+     * @return List of available window information.
      * @throws Exception An unexpected exception.
      */
-    public static WindowManagerWindow getWindowOrNull(String partialWindowTitle) throws Exception {
-        LOGGER.debug("Searching for window with partial title: {}", partialWindowTitle);
+    public static List<WindowManagerWindow> getWindows(String partialWindowTitle) throws Exception {
+        LOGGER.debug("Searching for windows with partial title: {}", partialWindowTitle);
 
-        WindowManagerWindow windowManagerWindow = getWindows().stream()
-                .filter(tmpWindow -> tmpWindow.title().contains(partialWindowTitle))
-                .findFirst()
-                .orElse(null);
+        String response = runCliCommandOrNull(List.of("get-windows", partialWindowTitle));
 
-        LOGGER.debug("Found window: {}", windowManagerWindow != null ? windowManagerWindow.title() : "null");
+        if(response == null)
+            return List.of();
 
-        return windowManagerWindow;
+        return extractWindows(response);
     }
 
     /**
      * Get window information recursively.
-     * @return List of window information.
+     * @return List of available window information.
      * @throws Exception An unexpected exception.
      */
     public static List<WindowManagerWindow> getWindows() throws Exception {
-        C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
+        LOGGER.debug("Searching for all windows.");
 
-        LOGGER.debug("Try to find available windows. Detected OS architecture: {}", c4jOsArchitecture);
+        String response = runCliCommandOrNull(List.of("get-windows"));
 
-        List<WindowManagerWindow> windowList = null;
+        if(response == null)
+            return List.of();
 
-        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64)
-            windowList = WindowManagerWindowsUtil.getWindows();
-
-        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64)
-            windowList = WindowManagerLinuxUtil.getWindows();
-
-        LOGGER.debug("Found windows: {}", windowList != null ? windowList.size() : 0);
-
-        if(windowList != null)
-            return windowList;
-
-        throw new Exception("Unsupported OS architecture.");
+        return extractWindows(response);
     }
 
     /**
      * Adds or removes the taskbar icon of the specified window.
-     * @param windowInfo The window to change the taskbar icon for.
+     * @param windowId The window ID.
      * @param setVisible Whether to make the window visible or not.
+     * @return True if the visibility was changed, false otherwise.
      * @throws Exception An unexpected exception.
      */
-    public static void changeTaskbarVisibility(WindowManagerWindow windowInfo, boolean setVisible) throws Exception {
-        C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
+    public static boolean changeTaskbarVisibility(long windowId, boolean setVisible) throws Exception {
+        LOGGER.debug("Try to change taskbar visibility. ID: {} Set visible: {}", windowId, setVisible);
 
-        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
-            LOGGER.debug("Changing taskbar visibility for Windows OS. New target window state: {}", setVisible);
+        String response = runCliCommandOrNull(List.of("toggle-window-taskbar-icon", String.valueOf(windowId),
+                String.valueOf(setVisible)));
 
-            WindowManagerWindowsUtil.changeTaskbarVisibility(windowInfo, setVisible);
+        if(response == null) {
+            LOGGER.warn("Unable to change taskbar visibility.");
 
-            return;
+            return false;
         }
 
-        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
-            LOGGER.debug("Changing taskbar visibility for Linux OS. New target window state: {}", setVisible);
-
-            WindowManagerLinuxUtil.changeTaskbarVisibility(windowInfo, setVisible);
-
-            return;
-        }
-
-        throw new Exception("Unsupported OS architecture.");
+        return true;
     }
 
     /**
      * Minimizes the specified window.
-     * @param windowInfo The window to minimize.
+     * @param windowId The window ID.
+     * @return True if the window was minimized, false otherwise.
      * @throws Exception An unexpected exception.
      */
-    public static void minimizeWindow(WindowManagerWindow windowInfo) throws Exception {
-        C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
+    public static boolean minimizeWindow(long windowId) throws Exception {
+        LOGGER.debug("Try to minimize window. ID: {}", windowId);
 
-        LOGGER.debug("Minimizing window. OS architecture: {} Window title: {}", c4jOsArchitecture, windowInfo.title());
+        String response = runCliCommandOrNull(List.of("minimize-window", String.valueOf(windowId)));
 
-        if(c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X86 || c4jOsArchitecture == C4jOsArchitecture.WINDOWS_X64) {
-            WindowManagerWindowsUtil.minimizeWindow(windowInfo);
+        if(response == null) {
+            LOGGER.warn("Unable to minimize window.");
 
-            return;
+            return false;
         }
 
-        if(c4jOsArchitecture == C4jOsArchitecture.LINUX_X86 || c4jOsArchitecture == C4jOsArchitecture.LINUX_X64) {
-            WindowManagerLinuxUtil.minimizeWindow(windowInfo);
-
-            return;
-        }
-
-        throw new Exception("Unsupported OS architecture.");
+        return true;
     }
 }
