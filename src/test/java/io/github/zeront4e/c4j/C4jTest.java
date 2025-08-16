@@ -23,7 +23,6 @@ import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,7 +73,7 @@ class C4jTest {
     void testCreateInstanceWithDistribution() throws Exception {
         try (MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
              MockedStatic<C4jOsDetectionUtil> mockedDetection = mockStatic(C4jOsDetectionUtil.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class)) {
 
             //Setup mocks.
 
@@ -87,7 +86,7 @@ class C4jTest {
             mockedDetection.when(C4jOsDetectionUtil::detectOsArchitecture)
                     .thenReturn(C4jOsArchitecture.WINDOWS_X64);
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
             //Test the method.
@@ -104,7 +103,7 @@ class C4jTest {
     void testCreateInstanceWithDistributionAndOptions() throws Exception {
         try (MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
              MockedStatic<C4jOsDetectionUtil> mockedDetection = mockStatic(C4jOsDetectionUtil.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class)) {
 
             //Setup mocks.
 
@@ -117,7 +116,7 @@ class C4jTest {
             mockedDetection.when(C4jOsDetectionUtil::detectOsArchitecture)
                     .thenReturn(C4jOsArchitecture.WINDOWS_X64);
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
             //Test the method.
@@ -134,8 +133,8 @@ class C4jTest {
     void testCreateInstanceWithOverwrite() throws Exception {
         try (MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
              MockedStatic<C4jOsDetectionUtil> mockedDetection = mockStatic(C4jOsDetectionUtil.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class);
-             MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class);
+             MockedStatic<FilesDeletionUtil> mockedFiles = mockStatic(FilesDeletionUtil.class)) {
 
             //Setup mocks.
 
@@ -148,10 +147,10 @@ class C4jTest {
             mockedDetection.when(C4jOsDetectionUtil::detectOsArchitecture)
                     .thenReturn(C4jOsArchitecture.WINDOWS_X64);
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
-            mockedFiles.when(() -> Files.deleteIfExists(any())).thenReturn(true);
+            mockedFiles.when(() -> FilesDeletionUtil.deleteFileOrFail(any())).thenReturn(true);
 
             //Test the method.
 
@@ -167,8 +166,8 @@ class C4jTest {
     void testCreateInstanceWithCallback() throws Exception {
         try (MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
              MockedStatic<C4jOsDetectionUtil> mockedDetection = mockStatic(C4jOsDetectionUtil.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class);
-             MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class);
+             MockedStatic<FilesDeletionUtil> mockedFiles = mockStatic(FilesDeletionUtil.class)) {
 
             //Setup mocks.
 
@@ -181,10 +180,10 @@ class C4jTest {
             mockedDetection.when(C4jOsDetectionUtil::detectOsArchitecture)
                     .thenReturn(C4jOsArchitecture.WINDOWS_X64);
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
-            mockedFiles.when(() -> Files.deleteIfExists(any())).thenReturn(true);
+            mockedFiles.when(() -> FilesDeletionUtil.deleteFileOrFail(any())).thenReturn(true);
 
             //Test the method.
 
@@ -212,7 +211,7 @@ class C4jTest {
     void testIsDefaultInstallationPresent() {
         try (MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
              MockedStatic<C4jOsDetectionUtil> mockedDetection = mockStatic(C4jOsDetectionUtil.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class)) {
 
             //Setup mocks.
 
@@ -226,14 +225,14 @@ class C4jTest {
 
             //Test when file exists.
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
             assertTrue(C4j.isDefaultInstallationPresent(mockDistribution));
 
             //Test when file doesn't exist.
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(null);
             assertFalse(C4j.isDefaultInstallationPresent(mockDistribution));
         }
@@ -242,7 +241,7 @@ class C4jTest {
     @Test
     void testIsDefaultInstallationPresentWithArchitecture() {
         try (MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class)) {
 
             //Setup mocks.
 
@@ -254,14 +253,14 @@ class C4jTest {
 
             //Test when file exists.
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
             assertTrue(C4j.isDefaultInstallationPresent(mockDistribution, C4jOsArchitecture.WINDOWS_X64));
 
             //Test when file doesn't exist.
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(null);
 
             assertFalse(C4j.isDefaultInstallationPresent(mockDistribution, C4jOsArchitecture.WINDOWS_X64));
@@ -347,7 +346,7 @@ class C4jTest {
             return invocation.callRealMethod();
         });
              MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
-             MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+             MockedStatic<FilesDeletionUtil> mockedFiles = mockStatic(FilesDeletionUtil.class)) {
 
             //Setup mocks.
 
@@ -356,7 +355,7 @@ class C4jTest {
             mockedDownloader.when(() -> C4jChromiumDownloader.getDefaultDistributionInstallationDirectory(any()))
                     .thenReturn(mockDir);
 
-            mockedFiles.when(() -> Files.deleteIfExists(any())).thenReturn(true);
+            mockedFiles.when(() -> FilesDeletionUtil.deleteFileOrFail(any())).thenReturn(true);
 
             //Call the real method we want to test.
 
@@ -375,7 +374,7 @@ class C4jTest {
             mockedDownloader.verify(() -> C4jChromiumDownloader.downloadChromiumOrFail(any()),
                     times(1));
 
-            mockedFiles.verify(() -> Files.deleteIfExists(any()), times(1));
+            mockedFiles.verify(() -> FilesDeletionUtil.deleteFileOrFail(any()), times(1));
         }
     }
 
@@ -428,11 +427,11 @@ class C4jTest {
     @Test
     void testFindChromiumExecutableOrNullWithValidExecutable() {
         try (MockedStatic<C4j> mockedC4j = mockStatic(C4j.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class)) {
 
             //Setup mocks.
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), eq("chrome.exe")))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), eq("chrome.exe")))
                     .thenReturn(mockChromiumFile);
 
             //Call the real method we want to test.
@@ -490,7 +489,7 @@ class C4jTest {
         try (MockedStatic<C4j> mockedC4j = mockStatic(C4j.class);
              MockedStatic<C4jChromiumDownloader> mockedDownloader = mockStatic(C4jChromiumDownloader.class);
              MockedStatic<C4jOsDetectionUtil> mockedDetection = mockStatic(C4jOsDetectionUtil.class);
-             MockedStatic<FileSearchUtil> mockedFileSearch = mockStatic(FileSearchUtil.class)) {
+             MockedStatic<FilesSearchUtil> mockedFileSearch = mockStatic(FilesSearchUtil.class)) {
 
             //Setup mocks.
 
@@ -503,7 +502,7 @@ class C4jTest {
             mockedDetection.when(C4jOsDetectionUtil::detectOsArchitecture)
                     .thenReturn(C4jOsArchitecture.WINDOWS_X64);
 
-            mockedFileSearch.when(() -> FileSearchUtil.findFileOrNull(any(), any()))
+            mockedFileSearch.when(() -> FilesSearchUtil.findFileOrNull(any(), any()))
                     .thenReturn(mockChromiumFile);
 
             //Call the real methods we want to test.
