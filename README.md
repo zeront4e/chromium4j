@@ -18,11 +18,11 @@ chromium4j provides a simple way to:
 
 ## Overview
 
-Currently supported platforms:
-- 🪟 Windows (x32 and x64)
-- 🐧 Linux (x32 and x64)
+Currently supported platforms by default (without providing custom download-properties, see below):
+- 🪟 Windows (x64 and arm64)
+- 🐧 Linux (x64 and arm64 (arm64 is not supported for Brave))
 
-Currently supported Chromium distributions (can be easily obtained without manual steps):
+Currently supported Chromium distributions:
 - Official Chromium builds from the official Chromium build-trunk
   - Source: https://github.com/release-monitoring-project/chromium-release-tracker
 - Official stable Brave builds from the official Brave GitHub repo 
