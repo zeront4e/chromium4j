@@ -26,8 +26,8 @@ import java.io.File;
 /**
  * Helper class to obtain the Chromium version.
  */
-class ChromiumVersionObtainer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ChromiumVersionObtainer.class);
+class SeleniumUtilChromiumVersionObtainer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SeleniumUtilChromiumVersionObtainer.class);
 
     private boolean versionWasObtained = false;
 
@@ -35,7 +35,7 @@ class ChromiumVersionObtainer {
 
     private final File chromeBinaryFile;
 
-    public ChromiumVersionObtainer(File chromeBinaryFile) {
+    public SeleniumUtilChromiumVersionObtainer(File chromeBinaryFile) {
         this.chromeBinaryFile = chromeBinaryFile;
     }
 

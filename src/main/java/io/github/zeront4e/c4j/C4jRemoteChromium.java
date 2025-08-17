@@ -28,7 +28,6 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.*;
 
-
 /**
  * Class for managing a remote Chromium instance.
  */
@@ -49,7 +48,7 @@ public class C4jRemoteChromium {
     private final boolean testInstance;
     private final ChromeDriver chromeDriver;
 
-    private final ChromiumVersionObtainer chromiumVersionObtainer;
+    private final SeleniumUtilChromiumVersionObtainer seleniumUtilChromiumVersionObtainer;
 
     private final Set<C4jExtension> c4JExtensions;
 
@@ -64,7 +63,7 @@ public class C4jRemoteChromium {
         testInstance = true;
         chromeDriver = null;
 
-        chromiumVersionObtainer = null;
+        seleniumUtilChromiumVersionObtainer = null;
 
         c4JExtensions = Set.of();
     }
@@ -143,13 +142,15 @@ public class C4jRemoteChromium {
 
                 chromeDriver.get(uuidWebServer.getUrl());
 
-                WindowManagerWindow window = WindowManagerUtil.getWindowOrNull(uuidWebServer.getUuid());
+                List<WindowManagerWindow> windows = WindowManagerUtil.getWindows(uuidWebServer.getUuid());
 
-                if(window == null)
+                if(windows.size() != 1)
                     throw new Exception("Unable to find window. Expected window UUID: " + uuidWebServer.getUuid());
 
-                WindowManagerUtil.minimizeWindow(window);
-                WindowManagerUtil.changeTaskbarVisibility(window, false);
+                WindowManagerWindow window = windows.get(0);
+
+                WindowManagerUtil.minimizeWindow(window.id());
+                WindowManagerUtil.changeTaskbarVisibility(window.id(), false);
 
                 stealthChromiumWindow = window;
 
@@ -171,7 +172,7 @@ public class C4jRemoteChromium {
 
         //Set additional internal variables.
 
-        chromiumVersionObtainer = new ChromiumVersionObtainer(chromeBinaryFile);
+        seleniumUtilChromiumVersionObtainer = new SeleniumUtilChromiumVersionObtainer(chromeBinaryFile);
 
         c4JExtensions = Collections.unmodifiableSet(c4jChromeOptions.getC4jCommonExtensions());
 
@@ -205,7 +206,7 @@ public class C4jRemoteChromium {
 
         LOGGER.debug("Toggle stealth window taskbar visibility. New state: {}", showWindow);
 
-        WindowManagerUtil.changeTaskbarVisibility(stealthChromiumWindow, showWindow);
+        WindowManagerUtil.changeTaskbarVisibility(stealthChromiumWindow.id(), showWindow);
 
         return true;
     }
@@ -225,7 +226,7 @@ public class C4jRemoteChromium {
      * @param devTools The DevTools instance for the window/tab.
      */
     public void clearBrowserDataForUrlPath(String urlPath, DevTools devTools) {
-        BrowserDataClearUtil.clearDataForUrlPath(chromeDriver, devTools, urlPath);
+        SeleniumUtilBrowserDataClearUtil.clearDataForUrlPath(chromeDriver, devTools, urlPath);
     }
 
     /**
@@ -249,7 +250,8 @@ public class C4jRemoteChromium {
      * @return The version of Chromium.
      */
     public ChromiumVersion getChromiumVersionOrNull() {
-        return chromiumVersionObtainer == null ? null : chromiumVersionObtainer.obtainChromiumVersionOrNull();
+        return seleniumUtilChromiumVersionObtainer == null ?
+                null : seleniumUtilChromiumVersionObtainer.obtainChromiumVersionOrNull();
     }
 
     /**
@@ -357,7 +359,7 @@ public class C4jRemoteChromium {
                                 "Target file: \"{}\"", tmpExtension.getId(), tmpExtension.getDescription(), downloadUrl,
                         extensionFile.getAbsolutePath());
 
-                FileDownloadUtil.downloadFileOrFail(downloadUrl, extensionFile);
+                FilesDownloadUtil.downloadFileOrFail(downloadUrl, extensionFile);
 
                 LOGGER.info("Downloaded extension.");
 

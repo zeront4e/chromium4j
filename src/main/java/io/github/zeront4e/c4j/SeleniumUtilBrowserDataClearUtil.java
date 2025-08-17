@@ -22,7 +22,7 @@ import org.openqa.selenium.devtools.v137.network.Network;
 
 import java.util.Set;
 
-class BrowserDataClearUtil {
+class SeleniumUtilBrowserDataClearUtil {
     public static void clearDataForUrlPath(ChromiumDriver chromiumDriver, DevTools devTools, String urlPath) {
         chromiumDriver.get(urlPath);
 
