@@ -20,6 +20,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -356,6 +357,56 @@ public class C4jChromeOptions {
                     Arrays.toString(environmentVariablesMap.entrySet().toArray()));
 
             this.environmentVariablesMap = environmentVariablesMap;
+
+            return this;
+        }
+
+        /**
+         * Sets a custom user data directory.
+         * @param directoryFile The custom user data directory to set.
+         * @return The builder instance.
+         */
+        public Builder addOptionCustomUserDataDirectory(File directoryFile) {
+            String directoryPath = directoryFile.getAbsolutePath();
+
+            LOGGER.info("Set custom user data directory. Add \"--user-data-dir={}\" option.", directoryPath);
+
+            this.chromeOptions.addArguments("--user-data-dir=" + directoryPath);
+
+            return this;
+        }
+
+        /**
+         * Sets a custom profile name.
+         * @param profileName The custom profile to set.
+         * @return The builder instance.
+         */
+        public Builder addOptionCustomUserProfile(String profileName) {
+            LOGGER.info("Set custom user profile. Add \"--profile-directory={}\" option.", profileName);
+
+            this.chromeOptions.addArguments("--profile-directory=" + profileName);
+
+            return this;
+        }
+
+        /**
+         * Adds a custom argument to the Chrome options.
+         * @param argument The custom argument to add.
+         * @return The builder instance.
+         */
+        public Builder addCustomArgument(String argument) {
+            return addCustomArguments(argument);
+        }
+
+        /**
+         * Adds custom arguments to the Chrome options.
+         * @param arguments The custom arguments to add.
+         * @return The builder instance.
+         */
+        public Builder addCustomArguments(String... arguments) {
+            LOGGER.info("Add custom Chrome-option argument(s): {}", Arrays.toString(arguments));
+
+            this.chromeOptions.addArguments(arguments);
 
             return this;
         }
