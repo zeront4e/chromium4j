@@ -195,7 +195,8 @@ public class C4jRemoteChromium {
     }
 
     /**
-     * Toggles the taskbar visibility of the stealth Chromium window.
+     * Toggles the taskbar visibility of the stealth Chromium window. The window is minimized, if the icon should be
+     * hidden (visibility is set to "false").
      * @param showWindow The desired visibility state.
      * @return True if the visibility was successfully toggled (the stealth mode is enabled), false otherwise (there is
      * no window, because the stealth mode is disabled).
@@ -205,6 +206,9 @@ public class C4jRemoteChromium {
             return false;
 
         LOGGER.debug("Toggle stealth window taskbar visibility. New state: {}", showWindow);
+
+        if(!showWindow)
+            WindowManagerUtil.minimizeWindow(stealthChromiumWindow.id());
 
         WindowManagerUtil.changeTaskbarVisibility(stealthChromiumWindow.id(), showWindow);
 
