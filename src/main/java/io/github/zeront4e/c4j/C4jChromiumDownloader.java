@@ -36,7 +36,7 @@ public class C4jChromiumDownloader {
     /**
      * The default directory to download files into (located at the user home directory).
      */
-    public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY;
+    public static final String DEFAULT_HOME_DOWNLOAD_DIRECTORY = Constants.DEFAULT_HOME_DOWNLOAD_DIRECTORY;
 
     /**
      * Returns the default distribution installation directory file.
@@ -53,8 +53,8 @@ public class C4jChromiumDownloader {
      * @return The default installation file.
      */
     public static File getDefaultInstallationDirectory() {
-        File baseDirectoryFile = new File(Constants.USER_HOME_DIRECTORY + "/" +
-                DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY);
+        File baseDirectoryFile = new File(Constants.CHROMIUM4J_HOME_DIRECTORY_PATH + "/" +
+                DEFAULT_HOME_DOWNLOAD_DIRECTORY);
 
         C4jOsArchitecture c4jOsArchitecture = C4jOsDetectionUtil.detectOsArchitecture();
 

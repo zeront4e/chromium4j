@@ -295,7 +295,9 @@ public class Example {
 
 ## Custom properties 📝
 
-These custom Java-properties can be set, to overwrite certain defaults.
+The following custom Java-properties can be set, to overwrite certain defaults.
+
+Notice that you can use the utility class `C4jPropertiesUtil` to easily set certain properties at runtime.
 
 ### Java executable directory
 
@@ -307,6 +309,16 @@ Note that the property "java.home" is used by default, if no custom property is 
 
 ```
 chromium4j.java-executable-directory-path
+```
+
+### Custom chromium4j home directory
+
+The following property can be used to set a custom chromium4j home directory (where the browser executables and all 
+chromium4j-related data is located). The value defaults to the user-home directory property-value if no custom property 
+is set.
+
+```
+chromium4j.home-directory-path
 ```
 
 ### Chromium URLs to download trunk-builds

@@ -15,7 +15,7 @@ limitations under the License.
 
 package io.github.zeront4e.c4j;
 
- import com.google.gson.JsonArray;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -44,8 +44,8 @@ class WindowManagerUtil {
     private static Path extractWindowManagerCli() throws Exception {
         String pomVersion = PomVersionExtractionUtil.getPomVersion();
 
-        Path versionFilePath = Path.of(Constants.USER_HOME_DIRECTORY + "/" +
-                Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY + CLI_VERSION_FILE_PATH);
+        Path versionFilePath = Path.of(Constants.CHROMIUM4J_HOME_DIRECTORY_PATH + "/" +
+                Constants.DEFAULT_HOME_DOWNLOAD_DIRECTORY + CLI_VERSION_FILE_PATH);
 
         boolean overwriteFile;
 
@@ -65,8 +65,8 @@ class WindowManagerUtil {
             overwriteFile = true;
         }
 
-        Path targetFilePath = Path.of(Constants.USER_HOME_DIRECTORY + "/" +
-                Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY + CLI_RESOURCE_PATH);
+        Path targetFilePath = Path.of(Constants.CHROMIUM4J_HOME_DIRECTORY_PATH + "/" +
+                Constants.DEFAULT_HOME_DOWNLOAD_DIRECTORY + CLI_RESOURCE_PATH);
 
         if(!overwriteFile && Files.exists(targetFilePath)) {
             LOGGER.info("Window manager CLI already exists. Path: {}", targetFilePath);
@@ -85,8 +85,8 @@ class WindowManagerUtil {
 
             //Write readme file.
 
-            Path readmeFilePath = Path.of(Constants.USER_HOME_DIRECTORY + "/" +
-                    Constants.DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY + DO_NOT_DELETE_README_RESOURCE_PATH);
+            Path readmeFilePath = Path.of(Constants.CHROMIUM4J_HOME_DIRECTORY_PATH + "/" +
+                    Constants.DEFAULT_HOME_DOWNLOAD_DIRECTORY + DO_NOT_DELETE_README_RESOURCE_PATH);
 
             ResourcesUtil.extractFile(DO_NOT_DELETE_README_RESOURCE_PATH, readmeFilePath);
 

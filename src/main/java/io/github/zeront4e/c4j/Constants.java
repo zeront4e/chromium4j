@@ -17,9 +17,23 @@ package io.github.zeront4e.c4j;
 
 class Constants {
     /**
-     * The default directory to download files into (located at the user home directory).
+     * The default directory to download files into (located at the user home directory or the set directory).
      */
-    public static final String DEFAULT_USER_HOME_DOWNLOAD_DIRECTORY = ".chromium4j";
+    public static final String DEFAULT_HOME_DOWNLOAD_DIRECTORY = ".chromium4j";
 
+    /**
+     * The user home directory.
+     */
     public static final String USER_HOME_DIRECTORY = System.getProperty("user.home");
+
+    /**
+     * The chromium4j home directory property.
+     */
+    public static final String CHROMIUM4J_HOME_DIRECTORY_PATH_PROPERTY = "chromium4j.home-directory-path";
+
+    /**
+     * The chromium4j home directory (defaults to the user-home-directory property-value if no custom property is set).
+     */
+    public static final String CHROMIUM4J_HOME_DIRECTORY_PATH =
+            System.getProperty(CHROMIUM4J_HOME_DIRECTORY_PATH_PROPERTY, USER_HOME_DIRECTORY);
 }
